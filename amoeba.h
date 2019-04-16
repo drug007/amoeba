@@ -229,7 +229,7 @@ struct am_Solver {
 
 /* utils */
 
-static am_Symbol am_newsymbol(am_Solver *solver, int type);
+am_Symbol am_newsymbol(am_Solver *solver, int type);
 
 static int am_approx(am_Float a, am_Float b)
 { return a > b ? a - b < AM_FLOAT_EPS : b - a < AM_FLOAT_EPS; }
@@ -282,17 +282,6 @@ static void am_free(am_MemPool *pool, void *obj) {
     *(void**)obj = pool->freed;
     pool->freed = obj;
 }
-
-static am_Symbol am_newsymbol(am_Solver *solver, int type) {
-    am_Symbol sym;
-    unsigned id = ++solver->symbol_count;
-    if (id > 0x3FFFFFFF) id = solver->symbol_count = 1;
-    assert(type >= AM_EXTERNAL && type <= AM_DUMMY);
-    sym.id   = id;
-    sym.type = type;
-    return sym;
-}
-
 
 /* hash table */
 
