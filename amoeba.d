@@ -93,6 +93,17 @@ enum AM_POOLSIZE     = 4096;
 enum AM_MIN_HASHSIZE = 4;
 enum AM_MAX_SIZET    = ((~cast(size_t)0)-100);
 
+version (AM_USE_FLOAT)
+{
+	enum AM_FLOAT_MAX = float.max;
+	enum AM_FLOAT_EPS = 1e-4f;
+}
+else
+{
+	enum  AM_FLOAT_MAX = double.max;
+	enum AM_FLOAT_EPS = 1e-6;
+}
+
 struct am_Symbol {
 	import std.bitmanip : bitfields;
 	mixin(bitfields!(
@@ -178,14 +189,20 @@ struct am_Solver {
 
 // /* utils */
 
-// static int am_approx(am_Float a, am_Float b)
-// { return a > b ? a - b < AM_FLOAT_EPS : b - a < AM_FLOAT_EPS; }
+int am_approx(am_Float a, am_Float b)
+{
+	return a > b ? (a - b < AM_FLOAT_EPS) : (b - a < AM_FLOAT_EPS);
+}
 
-// static int am_nearzero(am_Float a)
-// { return am_approx(a, 0.0f); }
+int am_nearzero(am_Float a)
+{
+	return am_approx(a, 0.0f);
+}
 
-// static am_Symbol am_null()
-// { am_Symbol null = { 0, 0 }; return null; }
+am_Symbol am_null()
+{
+	return am_Symbol();
+}
 
 // static void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
 // { if (sym.id == 0) *sym = am_newsymbol(solver, type); }

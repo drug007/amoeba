@@ -231,14 +231,11 @@ struct am_Solver {
 
 am_Symbol am_newsymbol(am_Solver *solver, int type);
 
-static int am_approx(am_Float a, am_Float b)
-{ return a > b ? a - b < AM_FLOAT_EPS : b - a < AM_FLOAT_EPS; }
+int am_approx(am_Float a, am_Float b);
 
-static int am_nearzero(am_Float a)
-{ return am_approx(a, 0.0f); }
+int am_nearzero(am_Float a);
 
-static am_Symbol am_null()
-{ am_Symbol null = { 0, 0 }; return null; }
+am_Symbol am_null();
 
 static void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
 { if (sym->id == 0) *sym = am_newsymbol(solver, type); }
