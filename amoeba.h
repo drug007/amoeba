@@ -287,64 +287,26 @@ void am_freerow(am_Solver *solver, am_Row *row);
 
 void am_resetrow(am_Row *row);
 
-static void am_initrow(am_Row *row) {
-    am_key(row) = am_null();
-    row->infeasible_next = am_null();
-    row->constant = 0.0f;
-    am_inittable(&row->terms, sizeof(am_Term));
-}
+void am_initrow(am_Row *row);
 
-static void am_multiply(am_Row *row, am_Float multiplier) {
-    am_Term *term = NULL;
-    row->constant *= multiplier;
-    while (am_nextentry(&row->terms, (am_Entry**)&term))
-        term->multiplier *= multiplier;
-}
+void am_multiply(am_Row *row, am_Float multiplier);
 
-static void am_addvar(am_Solver *solver, am_Row *row, am_Symbol sym, am_Float value) {
-    am_Term *term;
-    if (sym.id == 0) return;
-    if ((term = (am_Term*)am_gettable(&row->terms, sym)) == NULL)
-        term = (am_Term*)am_settable(solver, &row->terms, sym);
-    if (am_nearzero(term->multiplier += value))
-        am_delkey(&row->terms, &term->entry);
-}
+void am_addvar(am_Solver *solver, am_Row *row, am_Symbol sym, am_Float value);
 
-static void am_addrow(am_Solver *solver, am_Row *row, const am_Row *other, am_Float multiplier) {
-    am_Term *term = NULL;
-    row->constant += other->constant*multiplier;
-    while (am_nextentry(&other->terms, (am_Entry**)&term))
-        am_addvar(solver, row, am_key(term), term->multiplier*multiplier);
-}
+void am_addrow(am_Solver *solver, am_Row *row, const am_Row *other, am_Float multiplier);
 
-static void am_solvefor(am_Solver *solver, am_Row *row, am_Symbol entry, am_Symbol exit) {
-    am_Term *term = (am_Term*)am_gettable(&row->terms, entry);
-    am_Float reciprocal = 1.0f / term->multiplier;
-    assert(entry.id != exit.id && !am_nearzero(term->multiplier));
-    am_delkey(&row->terms, &term->entry);
-    am_multiply(row, -reciprocal);
-    if (exit.id != 0) am_addvar(solver, row, exit, reciprocal);
-}
+void am_solvefor(am_Solver *solver, am_Row *row, am_Symbol entry, am_Symbol exit);
 
-static void am_substitute(am_Solver *solver, am_Row *row, am_Symbol entry, const am_Row *other) {
-    am_Term *term = (am_Term*)am_gettable(&row->terms, entry);
-    if (!term) return;
-    am_delkey(&row->terms, &term->entry);
-    am_addrow(solver, row, other, term->multiplier);
-}
+void am_substitute(am_Solver *solver, am_Row *row, am_Symbol entry, const am_Row *other);
 
 
 /* variables & constraints */
 
-AM_API int am_variableid(am_Variable *var) { return var ? var->sym.id : -1; }
-AM_API am_Float am_value(am_Variable *var) { return var ? var->value : 0.0f; }
-AM_API void am_usevariable(am_Variable *var) { if (var) ++var->refcount; }
+int am_variableid(am_Variable *var);
+am_Float am_value(am_Variable *var);
+void am_usevariable(am_Variable *var);
 
-static am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym) {
-    am_VarEntry *ve = (am_VarEntry*)am_gettable(&solver->vars, sym);
-    assert(ve != NULL);
-    return ve->variable;
-}
+am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym);
 
 AM_API am_Variable *am_newvariable(am_Solver *solver) {
     am_Variable *var = (am_Variable*)am_alloc(solver, &solver->varpool);
