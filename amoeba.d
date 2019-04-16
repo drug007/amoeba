@@ -267,6 +267,8 @@ am_Symbol am_newsymbol(am_Solver *solver, int type) {
 // /* hash table */
 
 // #define am_key(entry) (((am_Entry*)(entry)).key)
+pragma(inline, true)
+auto am_key(E)(E entry) { return (cast(am_Entry*)(entry)).key; }
 
 // #define am_offset(lhs, rhs) ((int)((char*)(lhs) - (char*)(rhs)))
 pragma(inline, true)
@@ -275,11 +277,15 @@ auto am_offset(L, R)(L lhs, R rhs) { return cast(int)(cast(char*)(lhs) - cast(ch
 pragma(inline, true)
 auto am_index(H, I)(H h, I i) { return cast(am_Entry*)(cast(char*)(h) + (i)); }
 
-// static void am_delkey(am_Table *t, am_Entry *entry)
-// { entry.key = am_null(), --t.count; }
+void am_delkey(am_Table *t, am_Entry *entry)
+{
+	entry.key = am_null(), --t.count;
+}
 
-// static void am_inittable(am_Table *t, size_t entry_size)
-// { memset(t, 0, sizeof(*t)), t.entry_size = entry_size; }
+void am_inittable(am_Table *t, size_t entry_size)
+{
+	memset(t, 0, (*t).sizeof), t.entry_size = entry_size;
+}
 
 am_Entry *am_mainposition(const am_Table *t, am_Symbol key)
 {
@@ -301,11 +307,12 @@ size_t am_hashsize(am_Table *t, size_t len) {
     return newsize < len ? 0 : newsize;
 }
 
-// static void am_freetable(am_Solver *solver, am_Table *t) {
-//     size_t size = t.size*t.entry_size;
-//     if (size) solver.allocf(solver.ud, t.hash, 0, size);
-//     am_inittable(t, t.entry_size);
-// }
+void am_freetable(am_Solver *solver, am_Table *t)
+{
+    size_t size = t.size*t.entry_size;
+    if (size) solver.allocf(solver.ud, t.hash, 0, size);
+    am_inittable(t, t.entry_size);
+}
 
 size_t am_resizetable(am_Solver *solver, am_Table *t, size_t len) {
     size_t i, oldsize = t.size * t.entry_size;
@@ -359,25 +366,25 @@ am_Entry *am_newkey(am_Solver *solver, am_Table *t, am_Symbol key) {
     }
 }
 
-// static const am_Entry *am_gettable(const am_Table *t, am_Symbol key) {
-//     const am_Entry *e;
-//     if (t.size == 0 || key.id == 0) return NULL;
-//     e = am_mainposition(t, key);
-//     for (; e.key.id != key.id; e = am_index(e, e.next))
-//         if (e.next == 0) return NULL;
-//     return e;
-// }
+am_Entry *am_gettable(const am_Table *t, am_Symbol key) {
+    am_Entry *e;
+    if (t.size == 0 || key.id == 0) return null;
+    e = am_mainposition(t, key);
+    for (; e.key.id != key.id; e = am_index(e, e.next))
+        if (e.next == 0) return null;
+    return e;
+}
 
-// static am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
-//     am_Entry *e;
-//     assert(key.id != 0);
-//     if ((e = (am_Entry*)am_gettable(t, key)) != NULL) return e;
-//     e = am_newkey(solver, t, key);
-//     if (t.entry_size > sizeof(am_Entry))
-//         memset(e + 1, 0, t.entry_size-sizeof(am_Entry));
-//     ++t.count;
-//     return e;
-// }
+am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
+    am_Entry *e;
+    assert(key.id != 0);
+    if ((e = cast(am_Entry*)am_gettable(t, key)) !is null) return e;
+    e = am_newkey(solver, t, key);
+    if (t.entry_size > am_Entry.sizeof)
+        memset(e + 1, 0, t.entry_size-am_Entry.sizeof);
+    ++t.count;
+    return e;
+}
 
 // static int am_nextentry(const am_Table *t, am_Entry **pentry) {
 //     size_t i = *pentry ? am_offset(*pentry, t.hash) + t.entry_size : 0;
