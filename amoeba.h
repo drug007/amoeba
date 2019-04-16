@@ -276,28 +276,16 @@ am_Entry *am_gettable(const am_Table *t, am_Symbol key);
 
 am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key);
 
-static int am_nextentry(const am_Table *t, am_Entry **pentry) {
-    size_t i = *pentry ? am_offset(*pentry, t->hash) + t->entry_size : 0;
-    size_t size = t->size*t->entry_size;
-    for (; i < size; i += t->entry_size) {
-        am_Entry *e = am_index(t->hash, i);
-        if (e->key.id != 0) { *pentry = e; return 1; }
-    }
-    *pentry = NULL;
-    return 0;
-}
+int am_nextentry(const am_Table *t, am_Entry **pentry);
 
 
 /* expression (row) */
 
-static int am_isconstant(am_Row *row)
-{ return row->terms.count == 0; }
+int am_isconstant(am_Row *row);
 
-static void am_freerow(am_Solver *solver, am_Row *row)
-{ am_freetable(solver, &row->terms); }
+void am_freerow(am_Solver *solver, am_Row *row);
 
-static void am_resetrow(am_Row *row)
-{ row->constant = 0.0f; am_resettable(&row->terms); }
+void am_resetrow(am_Row *row);
 
 static void am_initrow(am_Row *row) {
     am_key(row) = am_null();

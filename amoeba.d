@@ -62,21 +62,6 @@ void am_delconstraint   (am_Constraint *cons);
 
 // AM_API int am_mergeconstraint (am_Constraint *cons, am_Constraint *other, am_Float multiplier);
 
-// AM_NS_END
-
-
-// #endif /* amoeba_h */
-
-
-// #if defined(AM_IMPLEMENTATION) && !defined(am_implemented)
-// #define am_implemented
-
-
-// #include <assert.h>
-// #include <float.h>
-// #include <stdlib.h>
-// #include <string.h>
-
 enum AM_EXTERNAL = 0;
 enum AM_SLACK    = 1;
 enum AM_ERROR    = 2;
@@ -189,7 +174,7 @@ struct am_Solver {
 	am_Symbol  dirty_vars;
 }
 
-// /* utils */
+/* utils */
 
 int am_approx(am_Float a, am_Float b)
 {
@@ -264,7 +249,7 @@ am_Symbol am_newsymbol(am_Solver *solver, int type) {
 }
 
 
-// /* hash table */
+/* hash table */
 
 // #define am_key(entry) (((am_Entry*)(entry)).key)
 pragma(inline, true)
@@ -386,44 +371,51 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
     return e;
 }
 
-// static int am_nextentry(const am_Table *t, am_Entry **pentry) {
-//     size_t i = *pentry ? am_offset(*pentry, t.hash) + t.entry_size : 0;
-//     size_t size = t.size*t.entry_size;
-//     for (; i < size; i += t.entry_size) {
-//         am_Entry *e = am_index(t.hash, i);
-//         if (e.key.id != 0) { *pentry = e; return 1; }
-//     }
-//     *pentry = NULL;
-//     return 0;
-// }
+int am_nextentry(const am_Table *t, am_Entry **pentry) {
+    size_t i = *pentry ? am_offset(*pentry, t.hash) + t.entry_size : 0;
+    size_t size = t.size*t.entry_size;
+    for (; i < size; i += t.entry_size) {
+        am_Entry *e = am_index(t.hash, i);
+        if (e.key.id != 0) { *pentry = e; return 1; }
+    }
+    *pentry = null;
+    return 0;
+}
 
 
-// /* expression (row) */
+/* expression (row) */
 
-// static int am_isconstant(am_Row *row)
-// { return row.terms.count == 0; }
+int am_isconstant(am_Row *row)
+{
+	return row.terms.count == 0;
+}
 
-// static void am_freerow(am_Solver *solver, am_Row *row)
-// { am_freetable(solver, &row.terms); }
+void am_freerow(am_Solver *solver, am_Row *row)
+{
+	am_freetable(solver, &row.terms);
+}
 
-// static void am_resetrow(am_Row *row)
-// { row.constant = 0.0f; am_resettable(&row.terms); }
+void am_resetrow(am_Row *row)
+{
+	row.constant = 0.0f;
+	am_resettable(&row.terms);
+}
 
-// static void am_initrow(am_Row *row) {
+// void am_initrow(am_Row *row) {
 //     am_key(row) = am_null();
 //     row.infeasible_next = am_null();
 //     row.constant = 0.0f;
 //     am_inittable(&row.terms, sizeof(am_Term));
 // }
 
-// static void am_multiply(am_Row *row, am_Float multiplier) {
+// void am_multiply(am_Row *row, am_Float multiplier) {
 //     am_Term *term = NULL;
 //     row.constant *= multiplier;
 //     while (am_nextentry(&row.terms, (am_Entry**)&term))
 //         term.multiplier *= multiplier;
 // }
 
-// static void am_addvar(am_Solver *solver, am_Row *row, am_Symbol sym, am_Float value) {
+// void am_addvar(am_Solver *solver, am_Row *row, am_Symbol sym, am_Float value) {
 //     am_Term *term;
 //     if (sym.id == 0) return;
 //     if ((term = (am_Term*)am_gettable(&row.terms, sym)) == NULL)
@@ -432,14 +424,14 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //         am_delkey(&row.terms, &term.entry);
 // }
 
-// static void am_addrow(am_Solver *solver, am_Row *row, const am_Row *other, am_Float multiplier) {
+// void am_addrow(am_Solver *solver, am_Row *row, const am_Row *other, am_Float multiplier) {
 //     am_Term *term = NULL;
 //     row.constant += other.constant*multiplier;
 //     while (am_nextentry(&other.terms, (am_Entry**)&term))
 //         am_addvar(solver, row, am_key(term), term.multiplier*multiplier);
 // }
 
-// static void am_solvefor(am_Solver *solver, am_Row *row, am_Symbol entry, am_Symbol exit) {
+// void am_solvefor(am_Solver *solver, am_Row *row, am_Symbol entry, am_Symbol exit) {
 //     am_Term *term = (am_Term*)am_gettable(&row.terms, entry);
 //     am_Float reciprocal = 1.0f / term.multiplier;
 //     assert(entry.id != exit.id && !am_nearzero(term.multiplier));
@@ -448,7 +440,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     if (exit.id != 0) am_addvar(solver, row, exit, reciprocal);
 // }
 
-// static void am_substitute(am_Solver *solver, am_Row *row, am_Symbol entry, const am_Row *other) {
+// void am_substitute(am_Solver *solver, am_Row *row, am_Symbol entry, const am_Row *other) {
 //     am_Term *term = (am_Term*)am_gettable(&row.terms, entry);
 //     if (!term) return;
 //     am_delkey(&row.terms, &term.entry);
@@ -462,7 +454,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 // AM_API am_Float am_value(am_Variable *var) { return var ? var.value : 0.0f; }
 // AM_API void am_usevariable(am_Variable *var) { if (var) ++var.refcount; }
 
-// static am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym) {
+// am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym) {
 //     am_VarEntry *ve = (am_VarEntry*)am_gettable(&solver.vars, sym);
 //     assert(ve != NULL);
 //     return ve.variable;
@@ -595,21 +587,21 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 // AM_API void am_autoupdate(am_Solver *solver, int auto_update)
 // { solver.auto_update = auto_update; }
 
-// static void am_infeasible(am_Solver *solver, am_Row *row) {
+// void am_infeasible(am_Solver *solver, am_Row *row) {
 //     if (am_isdummy(row.infeasible_next)) return;
 //     row.infeasible_next.id = solver.infeasible_rows.id;
 //     row.infeasible_next.type = AM_DUMMY;
 //     solver.infeasible_rows = am_key(row);
 // }
 
-// static void am_markdirty(am_Solver *solver, am_Variable *var) {
+// void am_markdirty(am_Solver *solver, am_Variable *var) {
 //     if (var.dirty_next.type == AM_DUMMY) return;
 //     var.dirty_next.id = solver.dirty_vars.id;
 //     var.dirty_next.type = AM_DUMMY;
 //     solver.dirty_vars = var.sym;
 // }
 
-// static void am_substitute_rows(am_Solver *solver, am_Symbol var, am_Row *expr) {
+// void am_substitute_rows(am_Solver *solver, am_Symbol var, am_Row *expr) {
 //     am_Row *row = NULL;
 //     while (am_nextentry(&solver.rows, (am_Entry**)&row)) {
 //         am_substitute(solver, row, var, expr);
@@ -621,7 +613,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     am_substitute(solver, &solver.objective, var, expr);
 // }
 
-// static int am_getrow(am_Solver *solver, am_Symbol sym, am_Row *dst) {
+// int am_getrow(am_Solver *solver, am_Symbol sym, am_Row *dst) {
 //     am_Row *row = (am_Row*)am_gettable(&solver.rows, sym);
 //     am_key(dst) = am_null();
 //     if (row == NULL) return AM_FAILED;
@@ -631,20 +623,20 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     return AM_OK;
 // }
 
-// static int am_putrow(am_Solver *solver, am_Symbol sym, const am_Row *src) {
+// int am_putrow(am_Solver *solver, am_Symbol sym, const am_Row *src) {
 //     am_Row *row = (am_Row*)am_settable(solver, &solver.rows, sym);
 //     row.constant = src.constant;
 //     row.terms    = src.terms;
 //     return AM_OK;
 // }
 
-// static void am_mergerow(am_Solver *solver, am_Row *row, am_Symbol var, am_Float multiplier) {
+// void am_mergerow(am_Solver *solver, am_Row *row, am_Symbol var, am_Float multiplier) {
 //     am_Row *oldrow = (am_Row*)am_gettable(&solver.rows, var);
 //     if (oldrow) am_addrow(solver, row, oldrow, multiplier);
 //     else am_addvar(solver, row, var, multiplier);
 // }
 
-// static int am_optimize(am_Solver *solver, am_Row *objective) {
+// int am_optimize(am_Solver *solver, am_Row *objective) {
 //     for (;;) {
 //         am_Symbol enter = am_null(), exit = am_null();
 //         am_Float r, min_ratio = AM_FLOAT_MAX;
@@ -679,7 +671,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     }
 // }
 
-// static am_Row am_makerow(am_Solver *solver, am_Constraint *cons) {
+// am_Row am_makerow(am_Solver *solver, am_Constraint *cons) {
 //     am_Term *term = NULL;
 //     am_Row row;
 //     am_initrow(&row);
@@ -713,7 +705,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     return row;
 // }
 
-// static void am_remove_errors(am_Solver *solver, am_Constraint *cons) {
+// void am_remove_errors(am_Solver *solver, am_Constraint *cons) {
 //     if (am_iserror(cons.marker))
 //         am_mergerow(solver, &solver.objective, cons.marker, -cons.strength);
 //     if (am_iserror(cons.other))
@@ -723,7 +715,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     cons.marker = cons.other = am_null();
 // }
 
-// static int am_add_with_artificial(am_Solver *solver, am_Row *row, am_Constraint *cons) {
+// int am_add_with_artificial(am_Solver *solver, am_Row *row, am_Constraint *cons) {
 //     am_Symbol a = am_newsymbol(solver, AM_SLACK);
 //     am_Term *term = NULL;
 //     am_Row tmp;
@@ -756,7 +748,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     return ret;
 // }
 
-// static int am_try_addrow(am_Solver *solver, am_Row *row, am_Constraint *cons) {
+// int am_try_addrow(am_Solver *solver, am_Row *row, am_Constraint *cons) {
 //     am_Symbol subject = am_null();
 //     am_Term *term = NULL;
 //     while (am_nextentry(&row.terms, (am_Entry**)&term))
@@ -789,7 +781,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 //     return AM_OK;
 // }
 
-// static am_Symbol am_get_leaving_row(am_Solver *solver, am_Symbol marker) {
+// am_Symbol am_get_leaving_row(am_Solver *solver, am_Symbol marker) {
 //     am_Symbol first = am_null(), second = am_null(), third = am_null();
 //     am_Float r1 = AM_FLOAT_MAX, r2 = AM_FLOAT_MAX;
 //     am_Row *row = NULL;
@@ -810,7 +802,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
 // }
 
 static void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constraint *cons);
-// static void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constraint *cons) {
+// void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constraint *cons) {
 //     am_Row *row;
 //     if ((row = (am_Row*)am_gettable(&solver.rows, cons.marker)) != NULL)
 //     { if ((row.constant -= delta) < 0.0f) am_infeasible(solver, row); return; }
@@ -828,7 +820,7 @@ static void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constra
 // }
 
 void am_dual_optimize(am_Solver *solver);
-// static void am_dual_optimize(am_Solver *solver) {
+// void am_dual_optimize(am_Solver *solver) {
 //     while (solver.infeasible_rows.id != 0) {
 //         am_Row tmp, *row =
 //             (am_Row*)am_gettable(&solver.rows, solver.infeasible_rows);
@@ -853,7 +845,7 @@ void am_dual_optimize(am_Solver *solver);
 //     }
 // }
 
-// static void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize) {
+// void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize) {
 //     void *newptr;
 //     (void)ud, (void)osize;
 //     if (nsize == 0) { free(ptr); return NULL; }
