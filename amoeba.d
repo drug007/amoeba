@@ -22,7 +22,7 @@ else
 	alias am_Float = double;
 
 // typedef void *am_Allocf (void *ud, void *ptr, size_t nsize, size_t osize);
-alias am_Allocf = void function (void *ud, void *ptr, size_t nsize, size_t osize);
+alias am_Allocf = void* function (void *ud, void *ptr, size_t nsize, size_t osize);
 
 // AM_API am_Solver *am_newsolver   (am_Allocf *allocf, void *ud);
 // AM_API void       am_resetsolver (am_Solver *solver, int clear_constraints);
@@ -206,24 +206,25 @@ struct am_Solver {
 //     am_initpool(pool, pool.size);
 // }
 
-// static void *am_alloc(am_Solver *solver, am_MemPool *pool) {
-//     void *obj = pool.freed;
-//     if (obj == NULL) {
-//         const size_t offset = AM_POOLSIZE - sizeof(void*);
-//         void *end, *newpage = solver.allocf(solver.ud, NULL, AM_POOLSIZE, 0);
-//         *(void**)((char*)newpage + offset) = pool.pages;
-//         pool.pages = newpage;
-//         end = (char*)newpage + (offset/pool.size-1)*pool.size;
-//         while (end != newpage) {
-//             *(void**)end = pool.freed;
-//             pool.freed = (void**)end;
-//             end = (char*)end - pool.size;
-//         }
-//         return end;
-//     }
-//     pool.freed = *(void**)obj;
-//     return obj;
-// }
+void *am_alloc(am_Solver *solver, am_MemPool *pool) {
+    void *obj = pool.freed;
+    if (obj is null) {
+        const size_t offset = AM_POOLSIZE - (void*).sizeof;
+        void* end = void;
+		auto newpage = (*solver.allocf)(solver.ud, null, AM_POOLSIZE, 0);
+        *cast(void**)(cast(char*)newpage + offset) = pool.pages;
+        pool.pages = newpage;
+        end = cast(char*)newpage + (offset/pool.size-1)*pool.size;
+        while (end != newpage) {
+            *cast(void**)end = pool.freed;
+            pool.freed = cast(void**)end;
+            end = cast(char*)end - pool.size;
+        }
+        return end;
+    }
+    pool.freed = *cast(void**)obj;
+    return obj;
+}
 
 // static void am_free(am_MemPool *pool, void *obj) {
 //     *(void**)obj = pool.freed;

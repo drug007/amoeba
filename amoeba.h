@@ -259,24 +259,24 @@ static void am_freepool(am_Solver *solver, am_MemPool *pool) {
     am_initpool(pool, pool->size);
 }
 
-static void *am_alloc(am_Solver *solver, am_MemPool *pool) {
-    void *obj = pool->freed;
-    if (obj == NULL) {
-        const size_t offset = AM_POOLSIZE - sizeof(void*);
-        void *end, *newpage = solver->allocf(solver->ud, NULL, AM_POOLSIZE, 0);
-        *(void**)((char*)newpage + offset) = pool->pages;
-        pool->pages = newpage;
-        end = (char*)newpage + (offset/pool->size-1)*pool->size;
-        while (end != newpage) {
-            *(void**)end = pool->freed;
-            pool->freed = (void**)end;
-            end = (char*)end - pool->size;
-        }
-        return end;
-    }
-    pool->freed = *(void**)obj;
-    return obj;
-}
+// static void *am_alloc(am_Solver *solver, am_MemPool *pool) {
+//     void *obj = pool->freed;
+//     if (obj == NULL) {
+//         const size_t offset = AM_POOLSIZE - sizeof(void*);
+//         void *end, *newpage = solver->allocf(solver->ud, NULL, AM_POOLSIZE, 0);
+//         *(void**)((char*)newpage + offset) = pool->pages;
+//         pool->pages = newpage;
+//         end = (char*)newpage + (offset/pool->size-1)*pool->size;
+//         while (end != newpage) {
+//             *(void**)end = pool->freed;
+//             pool->freed = (void**)end;
+//             end = (char*)end - pool->size;
+//         }
+//         return end;
+//     }
+//     pool->freed = *(void**)obj;
+//     return obj;
+// }
 
 static void am_free(am_MemPool *pool, void *obj) {
     *(void**)obj = pool->freed;
