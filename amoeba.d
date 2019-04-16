@@ -172,7 +172,7 @@ struct am_Constraint {
 }
 
 struct am_Solver {
-	am_Allocf *allocf;
+	am_Allocf  allocf;
 	void      *ud;
 	am_Row     objective;
 	am_Table   vars;            /* symbol . VarEntry */
@@ -210,21 +210,21 @@ void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
 		*sym = am_newsymbol(solver, type);
 }
 
-// static void am_initpool(am_MemPool *pool, size_t size) {
-//     pool.size  = size;
-//     pool.freed = pool.pages = NULL;
-//     assert(size > sizeof(void*) && size < AM_POOLSIZE/4);
-// }
+void am_initpool(am_MemPool *pool, size_t size) {
+    pool.size  = size;
+    pool.freed = pool.pages = null;
+    assert(size > (void*).sizeof && size < AM_POOLSIZE/4);
+}
 
-// static void am_freepool(am_Solver *solver, am_MemPool *pool) {
-//     const size_t offset = AM_POOLSIZE - sizeof(void*);
-//     while (pool.pages != NULL) {
-//         void *next = *(void**)((char*)pool.pages + offset);
-//         solver.allocf(solver.ud, pool.pages, 0, AM_POOLSIZE);
-//         pool.pages = next;
-//     }
-//     am_initpool(pool, pool.size);
-// }
+void am_freepool(am_Solver *solver, am_MemPool *pool) {
+    const size_t offset = AM_POOLSIZE - (void*).sizeof;
+    while (pool.pages !is null) {
+        void *next = *cast(void**)(cast(char*)pool.pages + offset);
+        solver.allocf(solver.ud, pool.pages, 0, AM_POOLSIZE);
+        pool.pages = next;
+    }
+    am_initpool(pool, pool.size);
+}
 
 // void *am_alloc(am_Solver *solver, am_MemPool *pool) {
 //     void *obj = pool.freed;

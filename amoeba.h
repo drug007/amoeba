@@ -239,21 +239,9 @@ am_Symbol am_null();
 
 void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type);
 
-static void am_initpool(am_MemPool *pool, size_t size) {
-    pool->size  = size;
-    pool->freed = pool->pages = NULL;
-    assert(size > sizeof(void*) && size < AM_POOLSIZE/4);
-}
+void am_initpool(am_MemPool *pool, size_t size);
 
-static void am_freepool(am_Solver *solver, am_MemPool *pool) {
-    const size_t offset = AM_POOLSIZE - sizeof(void*);
-    while (pool->pages != NULL) {
-        void *next = *(void**)((char*)pool->pages + offset);
-        solver->allocf(solver->ud, pool->pages, 0, AM_POOLSIZE);
-        pool->pages = next;
-    }
-    am_initpool(pool, pool->size);
-}
+void am_freepool(am_Solver *solver, am_MemPool *pool);
 
 static void *am_alloc(am_Solver *solver, am_MemPool *pool) {
     void *obj = pool->freed;
