@@ -237,8 +237,7 @@ int am_nearzero(am_Float a);
 
 am_Symbol am_null();
 
-static void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
-{ if (sym->id == 0) *sym = am_newsymbol(solver, type); }
+void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type);
 
 static void am_initpool(am_MemPool *pool, size_t size) {
     pool->size  = size;

@@ -204,8 +204,11 @@ am_Symbol am_null()
 	return am_Symbol();
 }
 
-// static void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
-// { if (sym.id == 0) *sym = am_newsymbol(solver, type); }
+void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
+{
+	if (sym.id == 0)
+		*sym = am_newsymbol(solver, type);
+}
 
 // static void am_initpool(am_MemPool *pool, size_t size) {
 //     pool.size  = size;
