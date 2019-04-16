@@ -1013,28 +1013,6 @@ AM_API int am_addedit(am_Variable *var, am_Float strength) {
     return AM_OK;
 }
 
-AM_API void am_deledit(am_Variable *var) {
-    if (var == NULL || var->constraint == NULL) return;
-    am_delconstraint(var->constraint);
-    var->constraint = NULL;
-    var->edit_value = 0.0f;
-}
-
-AM_API void am_suggest(am_Variable *var, am_Float value) {
-    am_Solver *solver = var ? var->solver : NULL;
-    am_Float delta;
-    if (var == NULL) return;
-    if (var->constraint == NULL) {
-        am_addedit(var, AM_MEDIUM);
-        assert(var->constraint != NULL);
-    }
-    delta = value - var->edit_value;
-    var->edit_value = value;
-    am_delta_edit_constant(solver, delta, var->constraint);
-    am_dual_optimize(solver);
-    if (solver->auto_update) am_updatevars(solver);
-}
-
 AM_NS_END
 
 
