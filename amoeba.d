@@ -1,5 +1,7 @@
 module amoeba;
 
+import core.stdc.string : memset, memcpy;
+
 extern(C):
 
 enum AM_OK          = (0);
@@ -284,8 +286,11 @@ am_Entry *am_mainposition(const am_Table *t, am_Symbol key)
 	return am_index(t.hash, (key.id & (t.size - 1))*t.entry_size);
 }
 
-// static void am_resettable(am_Table *t)
-// { t.count = 0; memset(t.hash, 0, t.lastfree = t.size * t.entry_size); }
+void am_resettable(am_Table *t)
+{
+	t.count = 0;
+	memset(t.hash, 0, t.lastfree = t.size * t.entry_size);
+}
 
 size_t am_hashsize(am_Table *t, size_t len) {
     size_t newsize = AM_MIN_HASHSIZE;
@@ -302,57 +307,57 @@ size_t am_hashsize(am_Table *t, size_t len) {
 //     am_inittable(t, t.entry_size);
 // }
 
-// static size_t am_resizetable(am_Solver *solver, am_Table *t, size_t len) {
-//     size_t i, oldsize = t.size * t.entry_size;
-//     am_Table nt = *t;
-//     nt.size = am_hashsize(t, len);
-//     nt.lastfree = nt.size*nt.entry_size;
-//     nt.hash = (am_Entry*)solver.allocf(solver.ud, NULL, nt.lastfree, 0);
-//     memset(nt.hash, 0, nt.size*nt.entry_size);
-//     for (i = 0; i < oldsize; i += nt.entry_size) {
-//         am_Entry *e = am_index(t.hash, i);
-//         if (e.key.id != 0) {
-//             am_Entry *ne = am_newkey(solver, &nt, e.key);
-//             if (t.entry_size > sizeof(am_Entry))
-//                 memcpy(ne + 1, e + 1, t.entry_size-sizeof(am_Entry));
-//         }
-//     }
-//     if (oldsize) solver.allocf(solver.ud, t.hash, 0, oldsize);
-//     *t = nt;
-//     return t.size;
-// }
-
-// static am_Entry *am_newkey(am_Solver *solver, am_Table *t, am_Symbol key) {
-//     if (t.size == 0) am_resizetable(solver, t, AM_MIN_HASHSIZE);
-//     for (;;) {
-//         am_Entry *mp = am_mainposition(t, key);
-//         if (mp.key.id != 0) {
-//             am_Entry *f = NULL, *othern;
-//             while (t.lastfree > 0) {
-//                 am_Entry *e = am_index(t.hash, t.lastfree -= t.entry_size);
-//                 if (e.key.id == 0 && e.next == 0)  { f = e; break; }
-//             }
-//             if (!f) { am_resizetable(solver, t, t.count*2); continue; }
-//             assert(f.key.id == 0);
-//             othern = am_mainposition(t, mp.key);
-//             if (othern != mp) {
-//                 am_Entry *next;
-//                 while ((next = am_index(othern, othern.next)) != mp)
-//                     othern = next;
-//                 othern.next = am_offset(f, othern);
-//                 memcpy(f, mp, t.entry_size);
-//                 if (mp.next) f.next += am_offset(mp, f), mp.next = 0;
-//             }
-//             else {
-//                 if (mp.next != 0) f.next = am_offset(mp, f) + mp.next;
-//                 else assert(f.next == 0);
-//                 mp.next = am_offset(f, mp), mp = f;
-//             }
-//         }
-//         mp.key = key;
-//         return mp;
-//     }
-// }
+size_t am_resizetable(am_Solver *solver, am_Table *t, size_t len) {
+    size_t i, oldsize = t.size * t.entry_size;
+    am_Table nt = *t;
+    nt.size = am_hashsize(t, len);
+    nt.lastfree = nt.size*nt.entry_size;
+    nt.hash = cast(am_Entry*)solver.allocf(solver.ud, null, nt.lastfree, 0);
+    memset(nt.hash, 0, nt.size*nt.entry_size);
+    for (i = 0; i < oldsize; i += nt.entry_size) {
+        am_Entry *e = am_index(t.hash, i);
+        if (e.key.id != 0) {
+            am_Entry *ne = am_newkey(solver, &nt, e.key);
+            if (t.entry_size > am_Entry.sizeof)
+                memcpy(ne + 1, e + 1, t.entry_size-am_Entry.sizeof);
+        }
+    }
+    if (oldsize) solver.allocf(solver.ud, t.hash, 0, oldsize);
+    *t = nt;
+    return t.size;
+}
+am_Entry *am_newkey(am_Solver *solver, am_Table *t, am_Symbol key) {
+    if (t.size == 0) am_resizetable(solver, t, AM_MIN_HASHSIZE);
+    for (;;) {
+        am_Entry *mp = am_mainposition(t, key);
+        if (mp.key.id != 0) {
+            am_Entry *f = null;
+			am_Entry *othern = void;
+            while (t.lastfree > 0) {
+                am_Entry *e = am_index(t.hash, t.lastfree -= t.entry_size);
+                if (e.key.id == 0 && e.next == 0)  { f = e; break; }
+            }
+            if (!f) { am_resizetable(solver, t, t.count*2); continue; }
+            assert(f.key.id == 0);
+            othern = am_mainposition(t, mp.key);
+            if (othern != mp) {
+                am_Entry *next;
+                while ((next = am_index(othern, othern.next)) != mp)
+                    othern = next;
+                othern.next = am_offset(f, othern);
+                memcpy(f, mp, t.entry_size);
+                if (mp.next) f.next += am_offset(mp, f), mp.next = 0;
+            }
+            else {
+                if (mp.next != 0) f.next = am_offset(mp, f) + mp.next;
+                else assert(f.next == 0);
+                mp.next = am_offset(f, mp), mp = f;
+            }
+        }
+        mp.key = key;
+        return mp;
+    }
+}
 
 // static const am_Entry *am_gettable(const am_Table *t, am_Symbol key) {
 //     const am_Entry *e;
