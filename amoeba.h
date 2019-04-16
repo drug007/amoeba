@@ -262,20 +262,12 @@ static void am_delkey(am_Table *t, am_Entry *entry)
 static void am_inittable(am_Table *t, size_t entry_size)
 { memset(t, 0, sizeof(*t)), t->entry_size = entry_size; }
 
-static am_Entry *am_mainposition(const am_Table *t, am_Symbol key)
-{ return am_index(t->hash, (key.id & (t->size - 1))*t->entry_size); }
+am_Entry *am_mainposition(const am_Table *t, am_Symbol key);
 
 static void am_resettable(am_Table *t)
 { t->count = 0; memset(t->hash, 0, t->lastfree = t->size * t->entry_size); }
 
-static size_t am_hashsize(am_Table *t, size_t len) {
-    size_t newsize = AM_MIN_HASHSIZE;
-    const size_t max_size = (AM_MAX_SIZET / 2) / t->entry_size;
-    while (newsize < max_size && newsize < len)
-        newsize <<= 1;
-    assert((newsize & (newsize - 1)) == 0);
-    return newsize < len ? 0 : newsize;
-}
+size_t am_hashsize(am_Table *t, size_t len);
 
 static void am_freetable(am_Solver *solver, am_Table *t) {
     size_t size = t->size*t->entry_size;
