@@ -206,25 +206,25 @@ struct am_Solver {
 //     am_initpool(pool, pool.size);
 // }
 
-void *am_alloc(am_Solver *solver, am_MemPool *pool) {
-    void *obj = pool.freed;
-    if (obj is null) {
-        const size_t offset = AM_POOLSIZE - (void*).sizeof;
-        void* end = void;
-		auto newpage = (*solver.allocf)(solver.ud, null, AM_POOLSIZE, 0);
-        *cast(void**)(cast(char*)newpage + offset) = pool.pages;
-        pool.pages = newpage;
-        end = cast(char*)newpage + (offset/pool.size-1)*pool.size;
-        while (end != newpage) {
-            *cast(void**)end = pool.freed;
-            pool.freed = cast(void**)end;
-            end = cast(char*)end - pool.size;
-        }
-        return end;
-    }
-    pool.freed = *cast(void**)obj;
-    return obj;
-}
+// void *am_alloc(am_Solver *solver, am_MemPool *pool) {
+//     void *obj = pool.freed;
+//     if (obj is null) {
+//         const size_t offset = AM_POOLSIZE - (void*).sizeof;
+//         void* end = void;
+// 		auto newpage = (*solver.allocf)(solver.ud, null, AM_POOLSIZE, 0);
+//         *cast(void**)(cast(char*)newpage + offset) = pool.pages;
+//         pool.pages = newpage;
+//         end = cast(char*)newpage + (offset/pool.size-1)*pool.size;
+//         while (end != newpage) {
+//             *cast(void**)end = pool.freed;
+//             pool.freed = cast(void**)end;
+//             end = cast(char*)end - pool.size;
+//         }
+//         return end;
+//     }
+//     pool.freed = *cast(void**)obj;
+//     return obj;
+// }
 
 // static void am_free(am_MemPool *pool, void *obj) {
 //     *(void**)obj = pool.freed;
