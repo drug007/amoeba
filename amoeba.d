@@ -512,29 +512,29 @@ void am_delconstraint(am_Constraint *cons) {
     am_free(&solver.conspool, cons);
 }
 
-// AM_API am_Constraint *am_cloneconstraint(am_Constraint *other, am_Float strength) {
-//     am_Constraint *cons;
-//     if (other == NULL) return NULL;
-//     cons = am_newconstraint(other.solver,
-//             am_nearzero(strength) ? other.strength : strength);
-//     am_mergeconstraint(cons, other, 1.0f);
-//     cons.relation = other.relation;
-//     return cons;
-// }
+am_Constraint *am_cloneconstraint(am_Constraint *other, am_Float strength) {
+    am_Constraint *cons;
+    if (other is null) return null;
+    cons = am_newconstraint(other.solver,
+            am_nearzero(strength) ? other.strength : strength);
+    am_mergeconstraint(cons, other, 1.0f);
+    cons.relation = other.relation;
+    return cons;
+}
 
-// AM_API int am_mergeconstraint(am_Constraint *cons, am_Constraint *other, am_Float multiplier) {
-//     am_Term *term = NULL;
-//     if (cons == NULL || other == NULL || cons.marker.id != 0
-//             || cons.solver != other.solver) return AM_FAILED;
-//     if (cons.relation == AM_GREATEQUAL) multiplier = -multiplier;
-//     cons.expression.constant += other.expression.constant*multiplier;
-//     while (am_nextentry(&other.expression.terms, (am_Entry**)&term)) {
-//         am_usevariable(am_sym2var(cons.solver, am_key(term)));
-//         am_addvar(cons.solver, &cons.expression, am_key(term),
-//                 term.multiplier*multiplier);
-//     }
-//     return AM_OK;
-// }
+int am_mergeconstraint(am_Constraint *cons, am_Constraint *other, am_Float multiplier) {
+    am_Term *term = null;
+    if (cons is null || other is null || cons.marker.id != 0
+            || cons.solver != other.solver) return AM_FAILED;
+    if (cons.relation == AM_GREATEQUAL) multiplier = -multiplier;
+    cons.expression.constant += other.expression.constant*multiplier;
+    while (am_nextentry(&other.expression.terms, cast(am_Entry**)&term)) {
+        am_usevariable(am_sym2var(cons.solver, am_key(term)));
+        am_addvar(cons.solver, &cons.expression, am_key(term),
+                term.multiplier*multiplier);
+    }
+    return AM_OK;
+}
 
 // AM_API void am_resetconstraint(am_Constraint *cons) {
 //     am_Term *term = NULL;
