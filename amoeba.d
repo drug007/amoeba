@@ -497,20 +497,20 @@ am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
     return cons;
 }
 
-// AM_API void am_delconstraint(am_Constraint *cons) {
-//     am_Solver *solver = cons ? cons.solver : NULL;
-//     am_Term *term = NULL;
-//     am_ConsEntry *ce;
-//     if (cons == NULL) return;
-//     am_remove(cons);
-//     ce = (am_ConsEntry*)am_gettable(&solver.constraints, am_key(cons));
-//     assert(ce != NULL);
-//     am_delkey(&solver.constraints, &ce.entry);
-//     while (am_nextentry(&cons.expression.terms, (am_Entry**)&term))
-//         am_delvariable(am_sym2var(solver, am_key(term)));
-//     am_freerow(solver, &cons.expression);
-//     am_free(&solver.conspool, cons);
-// }
+void am_delconstraint(am_Constraint *cons) {
+    am_Solver *solver = cons ? cons.solver : null;
+    am_Term *term = null;
+    am_ConsEntry *ce;
+    if (cons is null) return;
+    am_remove(cons);
+    ce = cast(am_ConsEntry*)am_gettable(&solver.constraints, am_key(cons));
+    assert(ce !is null);
+    am_delkey(&solver.constraints, &ce.entry);
+    while (am_nextentry(&cons.expression.terms, cast(am_Entry**)&term))
+        am_delvariable(am_sym2var(solver, am_key(term)));
+    am_freerow(solver, &cons.expression);
+    am_free(&solver.conspool, cons);
+}
 
 // AM_API am_Constraint *am_cloneconstraint(am_Constraint *other, am_Float strength) {
 //     am_Constraint *cons;
