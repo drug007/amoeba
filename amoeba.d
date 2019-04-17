@@ -536,44 +536,44 @@ int am_mergeconstraint(am_Constraint *cons, am_Constraint *other, am_Float multi
     return AM_OK;
 }
 
-// AM_API void am_resetconstraint(am_Constraint *cons) {
-//     am_Term *term = NULL;
-//     if (cons == NULL) return;
-//     am_remove(cons);
-//     cons.relation = 0;
-//     while (am_nextentry(&cons.expression.terms, (am_Entry**)&term))
-//         am_delvariable(am_sym2var(cons.solver, am_key(term)));
-//     am_resetrow(&cons.expression);
-// }
+void am_resetconstraint(am_Constraint *cons) {
+    am_Term *term = null;
+    if (cons is null) return;
+    am_remove(cons);
+    cons.relation = 0;
+    while (am_nextentry(&cons.expression.terms, cast(am_Entry**)&term))
+        am_delvariable(am_sym2var(cons.solver, am_key(term)));
+    am_resetrow(&cons.expression);
+}
 
-// AM_API int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier) {
-//     if (cons == NULL || var == NULL || cons.marker.id != 0 ||
-//             cons.solver != var.solver) return AM_FAILED;
-//     assert(var.sym.id != 0);
-//     assert(var.solver == cons.solver);
-//     if (cons.relation == AM_GREATEQUAL) multiplier = -multiplier;
-//     am_addvar(cons.solver, &cons.expression, var.sym, multiplier);
-//     am_usevariable(var);
-//     return AM_OK;
-// }
+int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier) {
+    if (cons is null || var is null || cons.marker.id != 0 ||
+            cons.solver != var.solver) return AM_FAILED;
+    assert(var.sym.id != 0);
+    assert(var.solver == cons.solver);
+    if (cons.relation == AM_GREATEQUAL) multiplier = -multiplier;
+    am_addvar(cons.solver, &cons.expression, var.sym, multiplier);
+    am_usevariable(var);
+    return AM_OK;
+}
 
-// AM_API int am_addconstant(am_Constraint *cons, am_Float constant) {
-//     if (cons == NULL || cons.marker.id != 0) return AM_FAILED;
-//     if (cons.relation == AM_GREATEQUAL)
-//         cons.expression.constant -= constant;
-//     else
-//         cons.expression.constant += constant;
-//     return AM_OK;
-// }
+int am_addconstant(am_Constraint *cons, am_Float constant) {
+    if (cons is null || cons.marker.id != 0) return AM_FAILED;
+    if (cons.relation == AM_GREATEQUAL)
+        cons.expression.constant -= constant;
+    else
+        cons.expression.constant += constant;
+    return AM_OK;
+}
 
-// AM_API int am_setrelation(am_Constraint *cons, int relation) {
-//     assert(relation >= AM_LESSEQUAL && relation <= AM_GREATEQUAL);
-//     if (cons == NULL || cons.marker.id != 0 || cons.relation != 0)
-//         return AM_FAILED;
-//     if (relation != AM_GREATEQUAL) am_multiply(&cons.expression, -1.0f);
-//     cons.relation = relation;
-//     return AM_OK;
-// }
+int am_setrelation(am_Constraint *cons, int relation) {
+    assert(relation >= AM_LESSEQUAL && relation <= AM_GREATEQUAL);
+    if (cons is null || cons.marker.id != 0 || cons.relation != 0)
+        return AM_FAILED;
+    if (relation != AM_GREATEQUAL) am_multiply(&cons.expression, -1.0f);
+    cons.relation = relation;
+    return AM_OK;
+}
 
 
 // /* Cassowary algorithm */
@@ -653,7 +653,7 @@ int am_optimize(am_Solver *solver, am_Row *objective) {
 
         while (am_nextentry(&solver.rows, cast(am_Entry**)&row)) {
             term = cast(am_Term*)am_gettable(&row.terms, enter);
-            if (term == null || !am_ispivotable(am_key(row))
+            if (term is null || !am_ispivotable(am_key(row))
                     || term.multiplier > 0.0f) continue;
             r = -row.constant / term.multiplier;
             if (r < min_ratio || (am_approx(r, min_ratio)
@@ -765,7 +765,7 @@ void am_remove_errors(am_Solver *solver, am_Constraint *cons) {
 //     if (subject.id == 0) {
 //         while (am_nextentry(&row.terms, (am_Entry**)&term))
 //             if (!am_isdummy(am_key(term))) break;
-//         if (term == NULL) {
+//         if (term is null) {
 //             if (am_nearzero(row.constant))
 //                 subject = cons.marker;
 //             else {
@@ -811,7 +811,7 @@ static void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constra
 //     { if ((row.constant += delta) < 0.0f) am_infeasible(solver, row); return; }
 //     while (am_nextentry(&solver.rows, (am_Entry**)&row)) {
 //         am_Term *term = (am_Term*)am_gettable(&row.terms, cons.marker);
-//         if (term == NULL) continue;
+//         if (term is null) continue;
 //         row.constant += term.multiplier*delta;
 //         if (am_isexternal(am_key(row)))
 //             am_markdirty(solver, am_sym2var(solver, am_key(row)));
@@ -851,14 +851,14 @@ void am_dual_optimize(am_Solver *solver);
 //     (void)ud, (void)osize;
 //     if (nsize == 0) { free(ptr); return NULL; }
 //     newptr = realloc(ptr, nsize);
-//     if (newptr == NULL) abort();
+//     if (newptr is null) abort();
 //     return newptr;
 // }
 
 // AM_API am_Solver *am_newsolver(am_Allocf *allocf, void *ud) {
 //     am_Solver *solver;
-//     if (allocf == NULL) allocf = am_default_allocf;
-//     if ((solver = (am_Solver*)allocf(ud, NULL, sizeof(am_Solver), 0)) == NULL)
+//     if (allocf is null) allocf = am_default_allocf;
+//     if ((solver = (am_Solver*)allocf(ud, NULL, sizeof(am_Solver), 0)) is null)
 //         return NULL;
 //     memset(solver, 0, sizeof(*solver));
 //     solver.allocf = allocf;
@@ -926,7 +926,7 @@ void am_dual_optimize(am_Solver *solver);
 //     am_Solver *solver = cons ? cons.solver : NULL;
 //     int ret, oldsym = solver ? solver.symbol_count : 0;
 //     am_Row row;
-//     if (solver == NULL || cons.marker.id != 0) return AM_FAILED;
+//     if (solver is null || cons.marker.id != 0) return AM_FAILED;
 //     row = am_makerow(solver, cons);
 //     if ((ret = am_try_addrow(solver, &row, cons)) != AM_OK) {
 //         am_remove_errors(solver, cons);
@@ -960,7 +960,7 @@ void am_remove(am_Constraint *cons);
 // }
 
 // AM_API int am_setstrength(am_Constraint *cons, am_Float strength) {
-//     if (cons == NULL) return AM_FAILED;
+//     if (cons is null) return AM_FAILED;
 //     strength = am_nearzero(strength) ? AM_REQUIRED : strength;
 //     if (cons.strength == strength) return AM_OK;
 //     if (cons.strength >= AM_REQUIRED || strength >= AM_REQUIRED)
@@ -980,7 +980,7 @@ void am_remove(am_Constraint *cons);
 // AM_API int am_addedit(am_Variable *var, am_Float strength) {
 //     am_Solver *solver = var ? var.solver : NULL;
 //     am_Constraint *cons;
-//     if (var == NULL || var.constraint != NULL) return AM_FAILED;
+//     if (var is null || var.constraint != NULL) return AM_FAILED;
 //     assert(var.sym.id != 0);
 //     if (strength >= AM_STRONG) strength = AM_STRONG;
 //     cons = am_newconstraint(solver, strength);

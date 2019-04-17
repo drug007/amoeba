@@ -320,44 +320,13 @@ AM_API am_Constraint *am_cloneconstraint(am_Constraint *other, am_Float strength
 
 AM_API int am_mergeconstraint(am_Constraint *cons, am_Constraint *other, am_Float multiplier);
 
-AM_API void am_resetconstraint(am_Constraint *cons) {
-    am_Term *term = NULL;
-    if (cons == NULL) return;
-    am_remove(cons);
-    cons->relation = 0;
-    while (am_nextentry(&cons->expression.terms, (am_Entry**)&term))
-        am_delvariable(am_sym2var(cons->solver, am_key(term)));
-    am_resetrow(&cons->expression);
-}
+AM_API void am_resetconstraint(am_Constraint *cons);
 
-AM_API int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier) {
-    if (cons == NULL || var == NULL || cons->marker.id != 0 ||
-            cons->solver != var->solver) return AM_FAILED;
-    assert(var->sym.id != 0);
-    assert(var->solver == cons->solver);
-    if (cons->relation == AM_GREATEQUAL) multiplier = -multiplier;
-    am_addvar(cons->solver, &cons->expression, var->sym, multiplier);
-    am_usevariable(var);
-    return AM_OK;
-}
+AM_API int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier);
 
-AM_API int am_addconstant(am_Constraint *cons, am_Float constant) {
-    if (cons == NULL || cons->marker.id != 0) return AM_FAILED;
-    if (cons->relation == AM_GREATEQUAL)
-        cons->expression.constant -= constant;
-    else
-        cons->expression.constant += constant;
-    return AM_OK;
-}
+AM_API int am_addconstant(am_Constraint *cons, am_Float constant);
 
-AM_API int am_setrelation(am_Constraint *cons, int relation) {
-    assert(relation >= AM_LESSEQUAL && relation <= AM_GREATEQUAL);
-    if (cons == NULL || cons->marker.id != 0 || cons->relation != 0)
-        return AM_FAILED;
-    if (relation != AM_GREATEQUAL) am_multiply(&cons->expression, -1.0f);
-    cons->relation = relation;
-    return AM_OK;
-}
+AM_API int am_setrelation(am_Constraint *cons, int relation);
 
 
 /* Cassowary algorithm */
