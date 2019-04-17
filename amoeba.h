@@ -308,29 +308,9 @@ void am_usevariable(am_Variable *var);
 
 am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym);
 
-AM_API am_Variable *am_newvariable(am_Solver *solver) {
-    am_Variable *var = (am_Variable*)am_alloc(solver, &solver->varpool);
-    am_Symbol sym = am_newsymbol(solver, AM_EXTERNAL);
-    am_VarEntry *ve = (am_VarEntry*)am_settable(solver, &solver->vars, sym);
-    assert(ve->variable == NULL);
-    memset(var, 0, sizeof(*var));
-    var->sym      = sym;
-    var->refcount = 1;
-    var->solver   = solver;
-    ve->variable  = var;
-    return var;
-}
+AM_API am_Variable *am_newvariable(am_Solver *solver);
 
-AM_API void am_delvariable(am_Variable *var) {
-    if (var && --var->refcount <= 0) {
-        am_Solver *solver = var->solver;
-        am_VarEntry *e = (am_VarEntry*)am_gettable(&solver->vars, var->sym);
-        assert(e != NULL);
-        am_delkey(&solver->vars, &e->entry);
-        am_remove(var->constraint);
-        am_free(&solver->varpool, var);
-    }
-}
+AM_API void am_delvariable(am_Variable *var);
 
 AM_API am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
     am_Constraint *cons = (am_Constraint*)am_alloc(solver, &solver->conspool);
@@ -784,7 +764,7 @@ AM_API int am_add(am_Constraint *cons) {
     return ret;
 }
 
-AM_API void am_remove(am_Constraint *cons) {
+void am_remove(am_Constraint *cons) {
     am_Solver *solver;
     am_Symbol marker;
     am_Row tmp;
