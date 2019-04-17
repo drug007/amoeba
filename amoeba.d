@@ -485,17 +485,17 @@ void am_delvariable(am_Variable *var) {
     }
 }
 
-// am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
-//     am_Constraint *cons = cast(am_Constraint*)am_alloc(solver, &solver.conspool);
-//     memset(cons, 0, (*cons).sizeof);
-//     cons.solver   = solver;
-//     cons.strength = am_nearzero(strength) ? AM_REQUIRED : strength;
-//     am_initrow(&cons.expression);
-//     am_key(cons).id = ++solver.constraint_count;
-//     am_key(cons).type = AM_EXTERNAL;
-//     (cast(am_ConsEntry*)am_settable(solver, &solver.constraints, am_key(cons))).constraint = cons;
-//     return cons;
-// }
+am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
+    am_Constraint *cons = cast(am_Constraint*)am_alloc(solver, &solver.conspool);
+    memset(cons, 0, (*cons).sizeof);
+    cons.solver   = solver;
+    cons.strength = am_nearzero(strength) ? AM_REQUIRED : strength;
+    am_initrow(&cons.expression);
+    (cast(am_Entry*)(cons)).key.id = ++solver.constraint_count;
+    (cast(am_Entry*)(cons)).key.type = AM_EXTERNAL;
+    (cast(am_ConsEntry*)am_settable(solver, &solver.constraints, am_key(cons))).constraint = cons;
+    return cons;
+}
 
 // AM_API void am_delconstraint(am_Constraint *cons) {
 //     am_Solver *solver = cons ? cons.solver : NULL;

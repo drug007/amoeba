@@ -312,18 +312,7 @@ AM_API am_Variable *am_newvariable(am_Solver *solver);
 
 AM_API void am_delvariable(am_Variable *var);
 
-AM_API am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
-    am_Constraint *cons = (am_Constraint*)am_alloc(solver, &solver->conspool);
-    memset(cons, 0, sizeof(*cons));
-    cons->solver   = solver;
-    cons->strength = am_nearzero(strength) ? AM_REQUIRED : strength;
-    am_initrow(&cons->expression);
-    am_key(cons).id = ++solver->constraint_count;
-    am_key(cons).type = AM_EXTERNAL;
-    ((am_ConsEntry*)am_settable(solver, &solver->constraints,
-        am_key(cons)))->constraint = cons;
-    return cons;
-}
+AM_API am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength);
 
 AM_API void am_delconstraint(am_Constraint *cons) {
     am_Solver *solver = cons ? cons->solver : NULL;
