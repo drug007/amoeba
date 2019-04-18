@@ -988,21 +988,21 @@ int am_setstrength(am_Constraint *cons, am_Float strength) {
     return AM_OK;
 }
 
-// AM_API int am_addedit(am_Variable *var, am_Float strength) {
-//     am_Solver *solver = var ? var.solver : NULL;
-//     am_Constraint *cons;
-//     if (var is null || var.constraint !is null) return AM_FAILED;
-//     assert(var.sym.id != 0);
-//     if (strength >= AM_STRONG) strength = AM_STRONG;
-//     cons = am_newconstraint(solver, strength);
-//     am_setrelation(cons, AM_EQUAL);
-//     am_addterm(cons, var, 1.0f); /* var must have positive signture */
-//     am_addconstant(cons, -var.value);
-//     if (am_add(cons) != AM_OK) assert(0);
-//     var.constraint = cons;
-//     var.edit_value = var.value;
-//     return AM_OK;
-// }
+int am_addedit(am_Variable *var, am_Float strength) {
+    am_Solver *solver = var ? var.solver : null;
+    am_Constraint *cons;
+    if (var is null || var.constraint !is null) return AM_FAILED;
+    assert(var.sym.id != 0);
+    if (strength >= AM_STRONG) strength = AM_STRONG;
+    cons = am_newconstraint(solver, strength);
+    am_setrelation(cons, AM_EQUAL);
+    am_addterm(cons, var, 1.0f); /* var must have positive signture */
+    am_addconstant(cons, -var.value);
+    if (am_add(cons) != AM_OK) assert(0);
+    var.constraint = cons;
+    var.edit_value = var.value;
+    return AM_OK;
+}
 
 void am_deledit(am_Variable *var) {
     if (var is null || var.constraint is null) return;
