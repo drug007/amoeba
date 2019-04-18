@@ -4,63 +4,26 @@ import core.stdc.string : memset, memcpy;
 
 extern(C):
 
-enum AM_OK          = (0);
-enum AM_FAILED      = (-1);
-enum AM_UNSATISFIED = (-2);
-enum AM_UNBOUND     = (-3);
+enum AM_OK          =  0;
+enum AM_FAILED      = -1;
+enum AM_UNSATISFIED = -2;
+enum AM_UNBOUND     = -3;
 
-enum AM_LESSEQUAL   = (1);
-enum AM_EQUAL       = (2);
-enum AM_GREATEQUAL  = (3);
+enum AM_LESSEQUAL   = 1;
+enum AM_EQUAL       = 2;
+enum AM_GREATEQUAL  = 3;
 
-enum AM_REQUIRED    = (cast(am_Float)1000000000);
-enum AM_STRONG      = (cast(am_Float)1000000);
-enum AM_MEDIUM      = (cast(am_Float)1000);
-enum AM_WEAK        = (cast(am_Float)1);
+enum AM_REQUIRED    = cast(am_Float)1000000000;
+enum AM_STRONG      = cast(am_Float)1000000;
+enum AM_MEDIUM      = cast(am_Float)1000;
+enum AM_WEAK        = cast(am_Float)1;
 
 version (AM_USE_FLOAT)
 	alias am_Float = float;
 else
 	alias am_Float = double;
 
-// typedef void *am_Allocf (void *ud, void *ptr, size_t nsize, size_t osize);
 alias am_Allocf = void* function (void *ud, void *ptr, size_t nsize, size_t osize);
-
-// AM_API am_Solver *am_newsolver   (am_Allocf *allocf, void *ud);
-// AM_API void       am_resetsolver (am_Solver *solver, int clear_constraints);
-// AM_API void       am_delsolver   (am_Solver *solver);
-
-void am_updatevars(am_Solver *solver);
-// AM_API void am_autoupdate(am_Solver *solver, int auto_update);
-
-// AM_API int am_hasedit       (am_Variable *var);
-// AM_API int am_hasconstraint (am_Constraint *cons);
-
-// AM_API int  am_add    (am_Constraint *cons);
-// AM_API void am_remove (am_Constraint *cons);
-
-int  am_addedit (am_Variable *var, am_Float strength);
-// AM_API void am_suggest (am_Variable *var, am_Float value);
-// AM_API void am_deledit (am_Variable *var);
-
-// AM_API am_Variable *am_newvariable (am_Solver *solver);
-// AM_API void         am_usevariable (am_Variable *var);
-// AM_API void         am_delvariable (am_Variable *var);
-// AM_API int          am_variableid  (am_Variable *var);
-// AM_API am_Float     am_value       (am_Variable *var);
-
-// AM_API am_Constraint *am_newconstraint   (am_Solver *solver, am_Float strength);
-// AM_API am_Constraint *am_cloneconstraint (am_Constraint *other, am_Float strength);
-
-// AM_API void am_resetconstraint (am_Constraint *cons);
-void am_delconstraint   (am_Constraint *cons);
-
-// AM_API int am_addterm     (am_Constraint *cons, am_Variable *var, am_Float multiplier);
-// AM_API int am_setrelation (am_Constraint *cons, int relation);
-// AM_API int am_addconstant (am_Constraint *cons, am_Float constant);
-// AM_API int am_setstrength (am_Constraint *cons, am_Float strength);
-
-// AM_API int am_mergeconstraint (am_Constraint *cons, am_Constraint *other, am_Float multiplier);
 
 enum AM_EXTERNAL = 0;
 enum AM_SLACK    = 1;
@@ -69,7 +32,7 @@ enum AM_DUMMY    = 3;
 
 pragma(inline, true)
 {
-	auto am_isexternal(Key)(Key key) { return key.type == AM_EXTERNAL; }
+	auto am_isexternal(Key)(Key key)  { return key.type == AM_EXTERNAL; }
 	auto am_isslack(Key)(Key key)     { return key.type == AM_SLACK; }
 	auto am_iserror(Key)(Key key)     { return key.type == AM_ERROR; }
 	auto am_isdummy(Key)(Key key)     { return key.type == AM_DUMMY; }
