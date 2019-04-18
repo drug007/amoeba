@@ -6,7 +6,8 @@
 *.exe
 
 *.so
-test.*
+test.??*
+test
 .vscode/
 *.o
 /amoeba_test
