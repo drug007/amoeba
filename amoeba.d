@@ -149,11 +149,6 @@ int am_nearzero(am_Float a)
 	return am_approx(a, 0.0f);
 }
 
-am_Symbol am_null()
-{
-	return am_Symbol();
-}
-
 void am_initsymbol(am_Solver *solver, am_Symbol *sym, int type)
 {
 	if (sym.id == 0)
@@ -227,7 +222,7 @@ auto am_index(H, I)(H h, I i) { return cast(am_Entry*)(cast(char*)(h) + (i)); }
 
 void am_delkey(am_Table *t, am_Entry *entry)
 {
-	entry.key = am_null(), --t.count;
+	entry.key = am_Symbol(), --t.count;
 }
 
 void am_inittable(am_Table *t, size_t entry_size)
@@ -365,9 +360,9 @@ void am_resetrow(am_Row *row)
 }
 
 void am_initrow(am_Row *row) {
-    // am_key(row) = am_null();
-	(cast(am_Entry*)(row)).key  = am_null();
-    row.infeasible_next = am_null();
+    // am_key(row) = am_Symbol();
+	(cast(am_Entry*)(row)).key  = am_Symbol();
+    row.infeasible_next = am_Symbol();
     row.constant = 0.0f;
     am_inittable(&row.terms, am_Term.sizeof);
 }
@@ -584,7 +579,7 @@ void am_substitute_rows(am_Solver *solver, am_Symbol var, am_Row *expr) {
 
 int am_getrow(am_Solver *solver, am_Symbol sym, am_Row *dst) {
     am_Row *row = cast(am_Row*)am_gettable(&solver.rows, sym);
-    (cast(am_Entry*)(dst)).key = am_null();
+    (cast(am_Entry*)(dst)).key = am_Symbol();
     if (row is null) return AM_FAILED;
     am_delkey(&solver.rows, &row.entry);
     dst.constant   = row.constant;
@@ -607,7 +602,7 @@ void am_mergerow(am_Solver *solver, am_Row *row, am_Symbol var, am_Float multipl
 
 int am_optimize(am_Solver *solver, am_Row *objective) {
     for (;;) {
-        am_Symbol enter = am_null(), exit = am_null();
+        am_Symbol enter = am_Symbol(), exit = am_Symbol();
         am_Float r, min_ratio = AM_FLOAT_MAX;
         am_Row tmp = void;
 		am_Row *row = null;
@@ -682,7 +677,7 @@ void am_remove_errors(am_Solver *solver, am_Constraint *cons) {
         am_mergerow(solver, &solver.objective, cons.other, -cons.strength);
     if (am_isconstant(&solver.objective))
         solver.objective.constant = 0.0f;
-    cons.marker = cons.other = am_null();
+    cons.marker = cons.other = am_Symbol();
 }
 
 int am_add_with_artificial(am_Solver *solver, am_Row *row, am_Constraint *cons) {
@@ -699,7 +694,7 @@ int am_add_with_artificial(am_Solver *solver, am_Row *row, am_Constraint *cons) 
     ret = am_nearzero(tmp.constant) ? AM_OK : AM_UNBOUND;
     am_freerow(solver, &tmp);
     if (am_getrow(solver, a, &tmp) == AM_OK) {
-        am_Symbol entry = am_null();
+        am_Symbol entry = am_Symbol();
         if (am_isconstant(&tmp)) { am_freerow(solver, &tmp); return ret; }
         while (am_nextentry(&tmp.terms, cast(am_Entry**)&term))
             if (am_ispivotable(am_key(term))) { entry = am_key(term); break; }
@@ -719,7 +714,7 @@ int am_add_with_artificial(am_Solver *solver, am_Row *row, am_Constraint *cons) 
 }
 
 int am_try_addrow(am_Solver *solver, am_Row *row, am_Constraint *cons) {
-    am_Symbol subject = am_null();
+    am_Symbol subject = am_Symbol();
     am_Term *term = null;
     while (am_nextentry(&row.terms, cast(am_Entry**)&term))
         if (am_isexternal(am_key(term))) { subject = am_key(term); break; }
@@ -745,14 +740,14 @@ int am_try_addrow(am_Solver *solver, am_Row *row, am_Constraint *cons) {
     }
     if (subject.id == 0)
         return am_add_with_artificial(solver, row, cons);
-    am_solvefor(solver, row, subject, am_null());
+    am_solvefor(solver, row, subject, am_Symbol());
     am_substitute_rows(solver, subject, row);
     am_putrow(solver, subject, row);
     return AM_OK;
 }
 
 am_Symbol am_get_leaving_row(am_Solver *solver, am_Symbol marker) {
-    am_Symbol first = am_null(), second = am_null(), third = am_null();
+    am_Symbol first = am_Symbol(), second = am_Symbol(), third = am_Symbol();
     am_Float r1 = AM_FLOAT_MAX, r2 = AM_FLOAT_MAX;
     am_Row *row = null;
     while (am_nextentry(&solver.rows, cast(am_Entry**)&row)) {
@@ -793,12 +788,12 @@ void am_dual_optimize(am_Solver *solver) {
         am_Row tmp = void;
 		am_Row *row =
             cast(am_Row*)am_gettable(&solver.rows, solver.infeasible_rows);
-        am_Symbol enter = am_null(), exit = am_key(row), curr;
+        am_Symbol enter = am_Symbol(), exit = am_key(row), curr;
         am_Term *objterm = void;
 		am_Term *term = null;
         am_Float r, min_ratio = AM_FLOAT_MAX;
         solver.infeasible_rows = row.infeasible_next;
-        row.infeasible_next = am_null();
+        row.infeasible_next = am_Symbol();
         if (row.constant >= 0.0f) continue;
         while (am_nextentry(&row.terms, cast(am_Entry**)&term)) {
             if (am_isdummy(curr = am_key(term)) || term.multiplier <= 0.0f)
@@ -879,7 +874,7 @@ void am_resetsolver(am_Solver *solver, int clear_constraints) {
     while (am_nextentry(&solver.constraints, &entry)) {
         am_Constraint *cons = (cast(am_ConsEntry*)entry).constraint;
         if (cons.marker.id == 0) continue;
-        cons.marker = cons.other = am_null();
+        cons.marker = cons.other = am_Symbol();
     }
     while (am_nextentry(&solver.rows, &entry)) {
         am_delkey(&solver.rows, entry);
@@ -892,7 +887,7 @@ void am_updatevars(am_Solver *solver) {
         am_Variable *var = am_sym2var(solver, solver.dirty_vars);
         am_Row *row = cast(am_Row*)am_gettable(&solver.rows, var.sym);
         solver.dirty_vars = var.dirty_next;
-        var.dirty_next = am_null();
+        var.dirty_next = am_Symbol();
         var.value = row ? row.constant : 0.0f;
     }
 }
