@@ -1,14 +1,14 @@
-import amoeba;
-
 import core.sys.posix.setjmp : jmp_buf, longjmp, setjmp;
 import core.stdc.stdarg : va_arg, va_list, va_start, va_end, __va_list_tag;
 import core.stdc.stdlib : free, realloc, malloc;
 import core.stdc.stdio : printf, perror;
 
+import amoeba;
+
 static jmp_buf jbuf;
-size_t allmem = 0;
-size_t maxmem = 0;
-void *END = null;
+static size_t allmem = 0;
+static size_t maxmem = 0;
+static void *END = null;
 
 extern(C)
 void *debug_allocf(void *ud, void *ptr, size_t ns, size_t os) {
@@ -744,5 +744,3 @@ int main()
 	test_all();
 	return 0;
 }
-
-/* cc: flags='-ggdb -Wall -fprofile-arcs -ftest-coverage -O0 -Wextra -pedantic -std=c89' */

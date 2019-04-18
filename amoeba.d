@@ -328,7 +328,7 @@ am_Entry *am_settable(am_Solver *solver, am_Table *t, am_Symbol key) {
     return e;
 }
 
-int am_nextentry(const am_Table *t, am_Entry **pentry) {
+int am_nextentry(const(am_Table) *t, am_Entry **pentry) {
     size_t i = *pentry ? am_offset(*pentry, t.hash) + t.entry_size : 0;
     size_t size = t.size*t.entry_size;
     for (; i < size; i += t.entry_size) {
