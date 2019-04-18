@@ -365,135 +365,21 @@ void am_delta_edit_constant(am_Solver *solver, am_Float delta, am_Constraint *co
 
 void am_dual_optimize(am_Solver *solver);
 
-static void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize) {
-    void *newptr;
-    (void)ud, (void)osize;
-    if (nsize == 0) { free(ptr); return NULL; }
-    newptr = realloc(ptr, nsize);
-    if (newptr == NULL) abort();
-    return newptr;
-}
+void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize);
 
-AM_API am_Solver *am_newsolver(am_Allocf *allocf, void *ud) {
-    am_Solver *solver;
-    if (allocf == NULL) allocf = am_default_allocf;
-    if ((solver = (am_Solver*)allocf(ud, NULL, sizeof(am_Solver), 0)) == NULL)
-        return NULL;
-    memset(solver, 0, sizeof(*solver));
-    solver->allocf = allocf;
-    solver->ud     = ud;
-    am_initrow(&solver->objective);
-    am_inittable(&solver->vars, sizeof(am_VarEntry));
-    am_inittable(&solver->constraints, sizeof(am_ConsEntry));
-    am_inittable(&solver->rows, sizeof(am_Row));
-    am_initpool(&solver->varpool, sizeof(am_Variable));
-    am_initpool(&solver->conspool, sizeof(am_Constraint));
-    return solver;
-}
+am_Solver *am_newsolver(am_Allocf *allocf, void *ud);
 
-AM_API void am_delsolver(am_Solver *solver) {
-    am_ConsEntry *ce = NULL;
-    am_Row *row = NULL;
-    while (am_nextentry(&solver->constraints, (am_Entry**)&ce))
-        am_freerow(solver, &ce->constraint->expression);
-    while (am_nextentry(&solver->rows, (am_Entry**)&row))
-        am_freerow(solver, row);
-    am_freerow(solver, &solver->objective);
-    am_freetable(solver, &solver->vars);
-    am_freetable(solver, &solver->constraints);
-    am_freetable(solver, &solver->rows);
-    am_freepool(solver, &solver->varpool);
-    am_freepool(solver, &solver->conspool);
-    solver->allocf(solver->ud, solver, 0, sizeof(*solver));
-}
+void am_delsolver(am_Solver *solver);
 
-AM_API void am_resetsolver(am_Solver *solver, int clear_constraints) {
-    am_Entry *entry = NULL;
-    if (!solver->auto_update) am_updatevars(solver);
-    while (am_nextentry(&solver->vars, &entry)) {
-        am_Constraint **cons = &((am_VarEntry*)entry)->variable->constraint;
-        am_remove(*cons);
-        *cons = NULL;
-    }
-    assert(am_nearzero(solver->objective.constant));
-    assert(solver->infeasible_rows.id == 0);
-    assert(solver->dirty_vars.id == 0);
-    if (!clear_constraints) return;
-    am_resetrow(&solver->objective);
-    while (am_nextentry(&solver->constraints, &entry)) {
-        am_Constraint *cons = ((am_ConsEntry*)entry)->constraint;
-        if (cons->marker.id == 0) continue;
-        cons->marker = cons->other = am_null();
-    }
-    while (am_nextentry(&solver->rows, &entry)) {
-        am_delkey(&solver->rows, entry);
-        am_freerow(solver, (am_Row*)entry);
-    }
-}
+AM_API void am_resetsolver(am_Solver *solver, int clear_constraints);
 
-AM_API void am_updatevars(am_Solver *solver) {
-    while (solver->dirty_vars.id != 0) {
-        am_Variable *var = am_sym2var(solver, solver->dirty_vars);
-        am_Row *row = (am_Row*)am_gettable(&solver->rows, var->sym);
-        solver->dirty_vars = var->dirty_next;
-        var->dirty_next = am_null();
-        var->value = row ? row->constant : 0.0f;
-    }
-}
+AM_API void am_updatevars(am_Solver *solver);
 
-AM_API int am_add(am_Constraint *cons) {
-    am_Solver *solver = cons ? cons->solver : NULL;
-    int ret, oldsym = solver ? solver->symbol_count : 0;
-    am_Row row;
-    if (solver == NULL || cons->marker.id != 0) return AM_FAILED;
-    row = am_makerow(solver, cons);
-    if ((ret = am_try_addrow(solver, &row, cons)) != AM_OK) {
-        am_remove_errors(solver, cons);
-        solver->symbol_count = oldsym;
-    }
-    else {
-        am_optimize(solver, &solver->objective);
-        if (solver->auto_update) am_updatevars(solver);
-    }
-    return ret;
-}
+AM_API int am_add(am_Constraint *cons);
 
-void am_remove(am_Constraint *cons) {
-    am_Solver *solver;
-    am_Symbol marker;
-    am_Row tmp;
-    if (cons == NULL || cons->marker.id == 0) return;
-    solver = cons->solver, marker = cons->marker;
-    am_remove_errors(solver, cons);
-    if (am_getrow(solver, marker, &tmp) != AM_OK) {
-        am_Symbol exit = am_get_leaving_row(solver, marker);
-        assert(exit.id != 0);
-        am_getrow(solver, exit, &tmp);
-        am_solvefor(solver, &tmp, marker, exit);
-        am_substitute_rows(solver, marker, &tmp);
-    }
-    am_freerow(solver, &tmp);
-    am_optimize(solver, &solver->objective);
-    if (solver->auto_update) am_updatevars(solver);
-}
+void am_remove(am_Constraint *cons);
 
-AM_API int am_setstrength(am_Constraint *cons, am_Float strength) {
-    if (cons == NULL) return AM_FAILED;
-    strength = am_nearzero(strength) ? AM_REQUIRED : strength;
-    if (cons->strength == strength) return AM_OK;
-    if (cons->strength >= AM_REQUIRED || strength >= AM_REQUIRED)
-    { am_remove(cons), cons->strength = strength; return am_add(cons); }
-    if (cons->marker.id != 0) {
-        am_Solver *solver = cons->solver;
-        am_Float diff = strength - cons->strength;
-        am_mergerow(solver, &solver->objective, cons->marker, diff);
-        am_mergerow(solver, &solver->objective, cons->other,  diff);
-        am_optimize(solver, &solver->objective);
-        if (solver->auto_update) am_updatevars(solver);
-    }
-    cons->strength = strength;
-    return AM_OK;
-}
+AM_API int am_setstrength(am_Constraint *cons, am_Float strength);
 
 AM_API int am_addedit(am_Variable *var, am_Float strength) {
     am_Solver *solver = var ? var->solver : NULL;
