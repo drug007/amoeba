@@ -12,7 +12,7 @@ static size_t maxmem;
 static void *END;
 
 extern(C)
-void* allocf(void *ud, void *ptr, size_t ns, size_t os)
+void* allocf(void *ud, void *ptr, size_t ns, size_t os) @nogc
 {
 	void *newptr = null;
 	allmem += ns;
@@ -21,8 +21,9 @@ void* allocf(void *ud, void *ptr, size_t ns, size_t os)
 	if (ns)
 	{
 		newptr = realloc(ptr, ns);
-		import std.exception : enforce;
-		enforce(newptr !is null);
+		// import std.exception : enforce;
+		// enforce(newptr !is null);
+		assert(0);
 	}
 	else 
 		free(ptr);
@@ -289,10 +290,13 @@ private:
 
 struct Solver
 {
+@nogc:
 	this(am_Solver* solver)
 	{
-		import std.exception : enforce;
-		enforce(solver);
+		// import std.exception : enforce;
+		// enforce(solver);
+		if (solver is null)
+			assert(0);
 		_am_solver = solver;
 	}
 
@@ -358,12 +362,12 @@ private:
 	}
 }
 
-auto cassowarySolver()
+auto cassowarySolver() @nogc
 {
 	return Solver(newSolver(&allocf, null));
 }
 
-int main()
+int main() @nogc
 {
 	{
 		auto solver = cassowarySolver;

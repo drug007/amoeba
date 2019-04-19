@@ -3,6 +3,7 @@ module cassowary.amoeba;
 import core.stdc.string : memset, memcpy;
 
 extern(C):
+@nogc:
 
 enum AM_OK          =  0;
 enum AM_FAILED      = -1;
@@ -67,7 +68,8 @@ struct am_MemPool {
 	void*  freed;
 	void*  pages;
 
-	this(size_t size) {
+	this(size_t size) @nogc
+	{
 		this.size  = size;
 		assert(size > (void*).sizeof && size < AM_POOLSIZE/4);
 	}
