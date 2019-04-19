@@ -3,7 +3,7 @@ import core.stdc.stdarg : va_arg, va_list, va_start, va_end, __va_list_tag;
 import core.stdc.stdlib : free, realloc, malloc;
 import core.stdc.stdio : printf, perror;
 
-import amoeba;
+import cassowary.amoeba;
 
 static jmp_buf jbuf;
 static size_t allmem = 0;
