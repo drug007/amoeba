@@ -148,7 +148,7 @@ struct IntermediateResult
 	string relation;
 }
 
-IntermediateResult process(string expression)
+IntermediateResult process(string expression) @nogc nothrow
 {
 	bool right_side, single, divide;
 	double number;
@@ -256,6 +256,7 @@ unittest
 
 struct Var
 {
+@nogc:
 	@disable
 	this();
 
@@ -308,7 +309,7 @@ struct Solver
 	auto addVariable(string name)
 	{
 		auto var = newVariable(_am_solver);
-		_varnames[name] = var;
+		debug _varnames[name] = var;
 		return Var(var);
 	}
 

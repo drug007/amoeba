@@ -4,6 +4,7 @@ import core.stdc.string : memset, memcpy;
 
 extern(C):
 @nogc:
+nothrow:
 
 enum AM_OK          =  0;
 enum AM_FAILED      = -1;
@@ -33,6 +34,7 @@ enum AM_DUMMY    = 3;
 
 pragma(inline, true)
 {
+@nogc nothrow:
 	auto am_isexternal(Key)(Key key)  { return key.type == AM_EXTERNAL; }
 	auto am_isslack(Key)(Key key)     { return key.type == AM_SLACK; }
 	auto am_iserror(Key)(Key key)     { return key.type == AM_ERROR; }
@@ -68,7 +70,7 @@ struct am_MemPool {
 	void*  freed;
 	void*  pages;
 
-	this(size_t size) @nogc
+	this(size_t size) @nogc nothrow
 	{
 		this.size  = size;
 		assert(size > (void*).sizeof && size < AM_POOLSIZE/4);
@@ -147,12 +149,12 @@ struct am_Solver {
 
 /* utils */
 
-int am_approx(am_Float a, am_Float b)
+int am_approx(am_Float a, am_Float b) @nogc nothrow
 {
 	return a > b ? (a - b < AM_FLOAT_EPS) : (b - a < AM_FLOAT_EPS);
 }
 
-int am_nearzero(am_Float a)
+int am_nearzero(am_Float a) @nogc nothrow
 {
 	return am_approx(a, 0.0f);
 }
@@ -211,16 +213,17 @@ am_Symbol am_newsymbol(am_Solver *solver, int type) {
 
 /* hash table */
 
-// #define am_key(entry) (((am_Entry*)(entry)).key)
 pragma(inline, true)
-auto am_key(E)(E entry) { return (cast(am_Entry*)(entry)).key; }
+{
+@nogc nothrow:
+	// #define am_key(entry) (((am_Entry*)(entry)).key)
+	auto am_key(E)(E entry) { return (cast(am_Entry*)(entry)).key; }
 
-// #define am_offset(lhs, rhs) ((int)((char*)(lhs) - (char*)(rhs)))
-pragma(inline, true)
-auto am_offset(L, R)(L lhs, R rhs) { return cast(int)(cast(char*)(lhs) - cast(char*)(rhs)); }
-// #define am_index(h, i)      ((am_Entry*)((char*)(h) + (i)))
-pragma(inline, true)
-auto am_index(H, I)(H h, I i) { return cast(am_Entry*)(cast(char*)(h) + (i)); }
+	// #define am_offset(lhs, rhs) ((int)((char*)(lhs) - (char*)(rhs)))
+	auto am_offset(L, R)(L lhs, R rhs) { return cast(int)(cast(char*)(lhs) - cast(char*)(rhs)); }
+	// #define am_index(h, i)      ((am_Entry*)((char*)(h) + (i)))
+	auto am_index(H, I)(H h, I i) { return cast(am_Entry*)(cast(char*)(h) + (i)); }
+}
 
 void am_delkey(am_Table *t, am_Entry *entry)
 {
@@ -232,7 +235,7 @@ void am_inittable(am_Table *t, size_t entry_size)
 	memset(t, 0, (*t).sizeof), t.entry_size = entry_size;
 }
 
-am_Entry *am_mainposition(const am_Table *t, am_Symbol key)
+am_Entry *am_mainposition(const am_Table *t, am_Symbol key) @nogc nothrow
 {
 	return am_index(t.hash, (key.id & (t.size - 1))*t.entry_size);
 }
@@ -311,7 +314,8 @@ am_Entry *am_newkey(am_Solver *solver, am_Table *t, am_Symbol key) {
     }
 }
 
-am_Entry *am_gettable(const am_Table *t, am_Symbol key) {
+am_Entry *am_gettable(const am_Table *t, am_Symbol key) @nogc nothrow
+{
     am_Entry *e;
     if (t.size == 0 || key.id == 0) return null;
     e = am_mainposition(t, key);
@@ -601,7 +605,8 @@ int am_putrow(am_Solver *solver, am_Symbol sym, /*const*/ am_Row *src) {
     return AM_OK;
 }
 
-void am_mergerow(am_Solver *solver, am_Row *row, am_Symbol var, am_Float multiplier) {
+void am_mergerow(am_Solver *solver, am_Row *row, am_Symbol var, am_Float multiplier) @nogc nothrow
+{
     am_Row *oldrow = cast(am_Row*)am_gettable(&solver.rows, var);
     if (oldrow) am_addrow(solver, row, oldrow, multiplier);
     else am_addvar(solver, row, var, multiplier);
@@ -677,7 +682,8 @@ am_Row am_makerow(am_Solver *solver, am_Constraint *cons) {
     return row;
 }
 
-void am_remove_errors(am_Solver *solver, am_Constraint *cons) {
+void am_remove_errors(am_Solver *solver, am_Constraint *cons) @nogc nothrow
+{
     if (am_iserror(cons.marker))
         am_mergerow(solver, &solver.objective, cons.marker, -cons.strength);
     if (am_iserror(cons.other))
@@ -916,7 +922,8 @@ int add(am_Constraint *cons) {
     return ret;
 }
 
-void am_remove(am_Constraint *cons) {
+void am_remove(am_Constraint *cons) @nogc nothrow
+{
     am_Solver *solver;
     am_Symbol marker;
     am_Row tmp;
@@ -935,7 +942,8 @@ void am_remove(am_Constraint *cons) {
     if (solver.auto_update) am_updatevars(solver);
 }
 
-int am_setstrength(am_Constraint *cons, am_Float strength) {
+int am_setstrength(am_Constraint *cons, am_Float strength)
+{
     if (cons is null) return AM_FAILED;
     strength = am_nearzero(strength) ? AM_REQUIRED : strength;
     if (cons.strength == strength) return AM_OK;
@@ -958,7 +966,7 @@ int am_addedit(am_Variable *var, am_Float strength) {
     am_Constraint *cons;
     if (var is null || var.constraint !is null) return AM_FAILED;
     assert(var.sym.id != 0);
-    if (strength >= AM_STRONG) strength = AM_STRONG;
+    if (strength > AM_STRONG) strength = AM_STRONG;
     cons = newConstraint(solver, strength);
     setrelation(cons, AM_EQUAL);
     addterm(cons, var, 1.0f); /* var must have positive signture */
