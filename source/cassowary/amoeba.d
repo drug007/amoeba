@@ -419,7 +419,7 @@ am_Variable *am_sym2var(am_Solver *solver, am_Symbol sym) {
     return ve.variable;
 }
 
-am_Variable *am_newvariable(am_Solver *solver) {
+am_Variable* newVariable(am_Solver *solver) {
     am_Variable *var = cast(am_Variable*)am_alloc(solver, &solver.varpool);
     am_Symbol sym = am_newsymbol(solver, AM_EXTERNAL);
     am_VarEntry *ve = cast(am_VarEntry*)am_settable(solver, &solver.vars, sym);
@@ -443,7 +443,7 @@ void am_delvariable(am_Variable *var) {
     }
 }
 
-am_Constraint *am_newconstraint(am_Solver *solver, am_Float strength) {
+am_Constraint* newConstraint(am_Solver *solver, am_Float strength) {
     am_Constraint *cons = cast(am_Constraint*)am_alloc(solver, &solver.conspool);
     memset(cons, 0, (*cons).sizeof);
     cons.solver   = solver;
@@ -473,7 +473,7 @@ void am_delconstraint(am_Constraint *cons) {
 am_Constraint *am_cloneconstraint(am_Constraint *other, am_Float strength) {
     am_Constraint *cons;
     if (other is null) return null;
-    cons = am_newconstraint(other.solver,
+    cons = newConstraint(other.solver,
             am_nearzero(strength) ? other.strength : strength);
     am_mergeconstraint(cons, other, 1.0f);
     cons.relation = other.relation;
@@ -504,7 +504,7 @@ void am_resetconstraint(am_Constraint *cons) {
     am_resetrow(&cons.expression);
 }
 
-int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier) {
+int addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier = 1.0) {
     if (cons is null || var is null || cons.marker.id != 0 ||
             cons.solver != var.solver) return AM_FAILED;
     assert(var.sym.id != 0);
@@ -515,7 +515,12 @@ int am_addterm(am_Constraint *cons, am_Variable *var, am_Float multiplier) {
     return AM_OK;
 }
 
-int am_addconstant(am_Constraint *cons, am_Float constant) {
+int addterm(am_Constraint *cons, am_Float multiplier, am_Variable *var)
+{
+	return addterm(cons, var, multiplier);
+}
+
+int addconstant(am_Constraint *cons, am_Float constant) {
     if (cons is null || cons.marker.id != 0) return AM_FAILED;
     if (cons.relation == AM_GREATEQUAL)
         cons.expression.constant -= constant;
@@ -524,7 +529,7 @@ int am_addconstant(am_Constraint *cons, am_Float constant) {
     return AM_OK;
 }
 
-int am_setrelation(am_Constraint *cons, int relation) {
+int setrelation(am_Constraint *cons, int relation) {
     assert(relation >= AM_LESSEQUAL && relation <= AM_GREATEQUAL);
     if (cons is null || cons.marker.id != 0 || cons.relation != 0)
         return AM_FAILED;
@@ -825,7 +830,7 @@ void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize) {
     return newptr;
 }
 
-am_Solver *am_newsolver(am_Allocf allocf, void *ud) {
+am_Solver *newSolver(am_Allocf allocf, void *ud) {
     am_Solver *solver;
     if (allocf is null) allocf = &am_default_allocf;
     if ((solver = cast(am_Solver*)allocf(ud, null, am_Solver.sizeof, 0)) is null)
@@ -842,7 +847,7 @@ am_Solver *am_newsolver(am_Allocf allocf, void *ud) {
     return solver;
 }
 
-void am_delsolver(am_Solver *solver) {
+void deleteSolver(am_Solver *solver) {
     am_ConsEntry *ce = null;
     am_Row *row = null;
     while (am_nextentry(&solver.constraints, cast(am_Entry**)&ce))
@@ -892,7 +897,7 @@ void am_updatevars(am_Solver *solver) {
     }
 }
 
-int am_add(am_Constraint *cons) {
+int add(am_Constraint *cons) {
     am_Solver *solver = cons ? cons.solver : null;
     int ret, oldsym = solver ? solver.symbol_count : 0;
     am_Row row;
@@ -933,7 +938,7 @@ int am_setstrength(am_Constraint *cons, am_Float strength) {
     strength = am_nearzero(strength) ? AM_REQUIRED : strength;
     if (cons.strength == strength) return AM_OK;
     if (cons.strength >= AM_REQUIRED || strength >= AM_REQUIRED)
-    { am_remove(cons), cons.strength = strength; return am_add(cons); }
+    { am_remove(cons), cons.strength = strength; return add(cons); }
     if (cons.marker.id != 0) {
         am_Solver *solver = cons.solver;
         am_Float diff = strength - cons.strength;
@@ -952,11 +957,11 @@ int am_addedit(am_Variable *var, am_Float strength) {
     if (var is null || var.constraint !is null) return AM_FAILED;
     assert(var.sym.id != 0);
     if (strength >= AM_STRONG) strength = AM_STRONG;
-    cons = am_newconstraint(solver, strength);
-    am_setrelation(cons, AM_EQUAL);
-    am_addterm(cons, var, 1.0f); /* var must have positive signture */
-    am_addconstant(cons, -var.value);
-    if (am_add(cons) != AM_OK) assert(0);
+    cons = newConstraint(solver, strength);
+    setrelation(cons, AM_EQUAL);
+    addterm(cons, var, 1.0f); /* var must have positive signture */
+    addconstant(cons, -var.value);
+    if (add(cons) != AM_OK) assert(0);
     var.constraint = cons;
     var.edit_value = var.value;
     return AM_OK;

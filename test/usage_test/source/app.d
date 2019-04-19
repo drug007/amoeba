@@ -29,6 +29,7 @@ version(DEBUG_MEMORY)
 else
 	return newptr;
 }
+
 void am_dumpkey(am_Symbol sym)
 {
 	debug if (sym.label.length)
@@ -82,62 +83,59 @@ void am_dumpsolver(const(am_Solver)* solver)
 
 int main()
 {
-	printf("\n\n==========\ntest2\n");
-	
-	auto solver = am_newsolver(&allocf, null);
+	auto solver = newSolver(&allocf, null);
 	assert(solver !is null);
-	auto xl = am_newvariable(solver);
+	auto xl = newVariable(solver);
 	debug xl.sym.label = "xl";
-	auto xm = am_newvariable(solver);
+	auto xm = newVariable(solver);
 	debug xm.sym.label = "xm";
-	auto xr = am_newvariable(solver);
+	auto xr = newVariable(solver);
 	debug xr.sym.label = "xr";
 
 	/* c1: 2*xm == xl + xr */
-	auto c1 = am_newconstraint(solver, AM_REQUIRED);
-	am_addterm(c1, xm, 2.0);
-	am_setrelation(c1, AM_EQUAL);
-	am_addterm(c1, xl, 1.0);
-	am_addterm(c1, xr, 1.0);
-	auto ret = am_add(c1);
+	auto c1 = newConstraint(solver, AM_REQUIRED);
+	c1.addterm(2.0, xm);
+	c1.setrelation(AM_EQUAL);
+	c1.addterm(xl);
+	c1.addterm(xr);
+	auto ret = c1.add();
 	assert(ret == AM_OK);
 
 	/* c2: xl + 10 <= xr */
-	auto c2 = am_newconstraint(solver, AM_REQUIRED);
-	am_addterm(c2, xl, 1.0);
-	am_addconstant(c2, 10.0);
-	am_setrelation(c2, AM_LESSEQUAL);
-	am_addterm(c2, xr, 1.0);
-	ret = am_add(c2);
+	auto c2 = newConstraint(solver, AM_REQUIRED);
+	c2.addterm(xl, 1.0);
+	c2.addconstant(10.0);
+	c2.setrelation(AM_LESSEQUAL);
+	c2.addterm(xr, 1.0);
+	ret = c2.add();
 	assert(ret == AM_OK);
 
 	/* c3: xr <= 100 */
-	auto c3 = am_newconstraint(solver, AM_REQUIRED);
-	am_addterm(c3, xr, 1.0);
-	am_setrelation(c3, AM_LESSEQUAL);
-	am_addconstant(c3, 100.0);
-	ret = am_add(c3);
+	auto c3 = newConstraint(solver, AM_REQUIRED);
+	c3.addterm(xr, 1.0);
+	c3.setrelation(AM_LESSEQUAL);
+	c3.addconstant(100.0);
+	ret = c3.add();
 	assert(ret == AM_OK);
 
 	/* c4: xl >= 0 */
-	auto c4 = am_newconstraint(solver, AM_REQUIRED);
-	am_addterm(c4, xl, 1.0);
-	am_setrelation(c4, AM_GREATEQUAL);
-	am_addconstant(c4, 0.0);
-	ret = am_add(c4);
+	auto c4 = newConstraint(solver, AM_REQUIRED);
+	c4.addterm(xl, 1.0);
+	c4.setrelation(AM_GREATEQUAL);
+	c4.addconstant(0.0);
+	ret = c4.add();
 	assert(ret == AM_OK);
 
 	/* c5: xm >= 12 */
-	auto c5 = am_newconstraint(solver, AM_REQUIRED);
-	am_addterm(c5, xm, 1.0);
-	am_setrelation(c5, AM_GREATEQUAL);
-	am_addconstant(c5, 12.0);
-	ret = am_add(c5);
+	auto c5 = newConstraint(solver, AM_REQUIRED);
+	c5.addterm(xm, 1.0);
+	c5.setrelation(AM_GREATEQUAL);
+	c5.addconstant(12.0);
+	ret = c5.add();
 	assert(ret == AM_OK);
 
 	am_addedit(xm, AM_MEDIUM);
 	assert(am_hasedit(xm));
-
 
 	foreach(i; 0..12)
 	{
@@ -151,9 +149,9 @@ int main()
 				am_value(xr));
 	}
 
-	am_delsolver(solver);
-	printf("allmem = %d\n", cast(int)allmem);
-	printf("maxmem = %d\n", cast(int)maxmem);
+	deleteSolver(solver);
+	printf("allmem = %ld\n", allmem);
+	printf("maxmem = %ld\n", maxmem);
 	assert(allmem == 0);
 	maxmem = 0;
 
