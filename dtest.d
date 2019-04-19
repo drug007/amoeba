@@ -32,6 +32,11 @@ else
 }
 void am_dumpkey(am_Symbol sym)
 {
+	debug if (sym.label.length)
+	{
+		printf("%s", sym.label.ptr);
+		return;
+	}
 	int ch = 'v';
 	switch (sym.type) {
 		case AM_EXTERNAL: ch = 'v'; break;
@@ -94,8 +99,11 @@ void test_all() {
 	solver = am_newsolver(&allocf, null);
 	assert(solver !is null);
 	xl = am_newvariable(solver);
+	debug xl.sym.label = "xl";
 	xm = am_newvariable(solver);
+	debug xm.sym.label = "xm";
 	xr = am_newvariable(solver);
+	debug xr.sym.label = "xr";
 
 	assert(am_variableid(null) == -1);
 	assert(am_variableid(xl) == 1);

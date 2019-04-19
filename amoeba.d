@@ -59,6 +59,7 @@ struct am_Symbol {
 	mixin(bitfields!(
 		uint, "id",    30,
 		uint, "type",   2,));
+	debug string label;
 }
 
 struct am_MemPool {
