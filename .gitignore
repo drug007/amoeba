@@ -4,12 +4,11 @@
 *.lib
 *.pdb
 *.exe
-
 *.so
 test.??*
-test
 dtest
 core
 .vscode/
 *.o
 /amoeba_test
+*.a
