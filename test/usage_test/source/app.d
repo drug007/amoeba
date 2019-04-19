@@ -83,83 +83,87 @@ void am_dumpsolver(const(am_Solver)* solver)
 	printf("-------------------------------\n");
 }
 
+mixin(grammar(`
+	Arithmetic:
+		Equality < Term Relation Term
+		Term     < Factor (Add / Sub)*
+		Add      < "+" Factor
+		Sub      < "-" Factor
+		Factor   < Primary (Mul / Div)*
+		Mul      < "*" Primary
+		Div      < "/" Primary
+		Primary  < Neg / Pos / Number / Variable
+		Neg      < "-" Primary
+		Pos      < "+" Primary
+		Number   < ~([0-9]+)
+		Relation < Equal / LessEqual / GreatEqual
+		Equal    < "=="
+		LessEqual < "<="
+		GreatEqual < ">="
+
+		Variable <- identifier
+`));
+
 struct TermArgs
 {
-	bool   negative;
+	import std.bitmanip : bitfields;
+	mixin(bitfields!(
+		bool, "negative",  1,
+		bool, "constant",  1,
+		int,  "",         30,
+	));
 	double factor;
 	string var_name;
+
+	this(bool negative, bool constant, double factor, string var_name)
+	{
+		this.negative = negative;
+		this.constant = constant;
+		this.factor   = factor;
+		this.var_name = var_name;
+	}
 
 	bool complete() const
 	{
 		import std.math : isNaN;
-		return !factor.isNaN && var_name.length;
+		return !factor.isNaN && (var_name.length || constant);
+	}
+
+	auto toString() const
+	{
+		import std.conv : text;
+		return text(
+			typeof(this).stringof, "(",
+			negative ? "`negative " : "`positive ", 
+			constant ? "constant`, " : "expression`, ", factor, ", ", var_name,
+			")"
+		);
 	}
 }
 
-int main()
+struct IntermediaryResult
 {
-	auto solver = newSolver(&allocf, null);
-	assert(solver !is null);
-	auto xl = newVariable(solver);
-	debug xl.sym.label = "xl";
-	auto xm = newVariable(solver);
-	debug xm.sym.label = "xm";
-	auto xr = newVariable(solver);
-	debug xr.sym.label = "xr";
+	TermArgs[] left, right;
+	string relation;
+}
 
-	mixin(grammar(`
-		Arithmetic:
-			Equality < Term Relation Term
-			Term     < Factor (Add / Sub)*
-			Add      < "+" Factor
-			Sub      < "-" Factor
-			Factor   < Primary (Mul / Div)*
-			Mul      < "*" Primary
-			Div      < "/" Primary
-			Primary  < Neg / Pos / Number / Variable
-			Neg      < "-" Primary
-			Pos      < "+" Primary
-			Number   < ~([0-9]+)
-			Relation < Equal / LessEqual / GreatEqual
-			Equal    < "=="
-			LessEqual < "<="
-			GreatEqual < ">="
-
-			Variable <- identifier
-	`));
-
-	// And at runtime too:
-	auto parseTree = Arithmetic("2*xm - 3*bb - 100 - xl == -13 - xl + xr/2 + 1000 - 200 - aa/3 - 11");
-	// auto parseTree = Arithmetic("xm*2 == xl+xr");
-	// auto c1 = newConstraint(solver, AM_REQUIRED);
-	// c1.addterm(2.0, xm);
-	// c1.setrelation(AM_EQUAL);
-	// c1.addterm(xl);
-	// c1.addterm(xr);
-	// auto ret = c1.add();
-	// assert(ret == AM_OK);
-
-	import std.stdio;
-	// writeln(parseTree);
-
+IntermediaryResult process(string expression)
+{
 	bool right_side, single, divide;
 	double number;
 	TermArgs term_args;
-	TermArgs[] left, right;
-				writeln("auto cons = newConstraint(solver, AM_REQUIRED);");
-	auto cons = newConstraint(solver, AM_REQUIRED);
+	IntermediaryResult iresult;
 
+	auto parseTree = Arithmetic(expression);
 	void value(ParseTree p)
 	{
-		// writeln("\t", p.name);
 		switch (p.name)
 		{
 			case "Arithmetic":
 				return value(p.children[0]);
 			case "Arithmetic.Equality":
-				foreach(ch; p.children)
-					writeln(ch.name);
 				value(p.children[0]);
+				iresult.relation = p.children[1].matches[0];
 				right_side = true;
 				value(p.children[2]);
 				break;
@@ -195,35 +199,88 @@ int main()
 				value(p.children[0]);
 			break;
 			case "Arithmetic.Number":
+				import std.conv : to;
 				term_args.factor = divide ? 
 					1 / to!double(p.matches[0]) :
 					to!double(p.matches[0]);
 				divide = false;
 				if (single)
-					term_args.var_name = p.matches[0];
+					term_args.constant = true;
 			break;
 			case "Arithmetic.Variable":
 				term_args.var_name = p.matches[0];
 				if (single)
 					term_args.factor = 1.0;
+			break;
 			default:
 		}
 
 		if (term_args.complete)
 		{
 			if (right_side)
-				right ~= term_args;
+				iresult.right ~= term_args;
 			else
-				left  ~= term_args;
+				iresult.left  ~= term_args;
 			term_args = TermArgs();
 		}
 	}
 
 	value(parseTree);
-	// writeln(parseTree);
 
-	writeln(left, " vs ", right);
+	return iresult;
+}
 
+unittest
+{
+	import std.algorithm : equal;
+	auto ir = process("2*xm - 3*bb - 100 - xl == -13 - xl + xr/2 + 1000 - 200 - aa/4 - 11");
+	
+	assert(ir.left.equal([
+		TermArgs(false, false,   2, "xm"), 
+		TermArgs(true,  false,   3, "bb"), 
+		TermArgs(true,  true,  100, ""), 
+		TermArgs(true,  false,   1, "xl")
+	]));
+	assert(ir.right.equal([
+		TermArgs(true,  true,    13.00, ""  ), 
+		TermArgs(true,  false,    1.00, "xl"), 
+		TermArgs(false, false,    0.50, "xr"), 
+		TermArgs(false, true,  1000.00, ""  ), 
+		TermArgs(true,  true,   200.00, ""  ), 
+		TermArgs(true,  false,    0.25, "aa"), 
+		TermArgs(true,  true,    11.00, ""  )
+	]));
+	assert(ir.relation == "==");
+}
+
+int main()
+{
+	auto solver = newSolver(&allocf, null);
+	assert(solver !is null);
+	auto xl = newVariable(solver);
+	debug xl.sym.label = "xl";
+	auto xm = newVariable(solver);
+	debug xm.sym.label = "xm";
+	auto xr = newVariable(solver);
+	debug xr.sym.label = "xr";
+
+	{
+		auto ir = process("xm*2 == xl+xr");
+
+		auto cons = newConstraint(solver, AM_REQUIRED);
+		foreach(e; ir.left)
+		{
+
+		}
+
+		// cons.addterm(2.0, xm);
+		// cons.setrelation(AM_EQUAL);
+		// cons.addterm(xl);
+		// cons.addterm(xr);
+		// auto ret = cons.add();
+		// assert(ret == AM_OK);
+	}
+	import std.stdio;
 	return 0;
 
 	// /* c1: 2*xm == xl + xr */
