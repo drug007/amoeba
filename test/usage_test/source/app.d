@@ -253,84 +253,108 @@ unittest
 	assert(ir.relation == "==");
 }
 
-am_Variable*[string] varnames;
-
-auto performTerms(am_Constraint* cons, TermArgs[] ta)
+struct Solver
 {
-	foreach(e; ta)
+	this(am_Solver* solver)
 	{
-		if (!e.constant)
+		import std.exception : enforce;
+		enforce(solver);
+		_am_solver = solver;
+	}
+
+	~this()
+	{
+		deleteSolver(_am_solver);
+	}
+
+	auto addVariable(string name)
+	{
+		auto var = newVariable(_am_solver);
+		_varnames[name] = var;
+		return var;
+	}
+
+	auto addConstraint(string expression)
+	{
+		auto ir = process(expression);
+		auto cons = newConstraint(_am_solver, AM_REQUIRED);
+
+		performTerms(cons, ir.left);
+		switch(ir.relation)
 		{
-			auto var = varnames.get(e.var_name, null);
-			if (var is null)
+			case "==" : cons.setrelation(AM_EQUAL);      break;
+			case ">=" : cons.setrelation(AM_GREATEQUAL); break;
+			case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
+			default: throw new Exception("Unsupported relation: " ~ ir.relation);
+		}
+		performTerms(cons, ir.right);
+
+		import std.exception : enforce;
+		auto ret = cons.add();
+		enforce(ret == AM_OK);
+	}
+
+	auto update()
+	{
+		_am_solver.am_updatevars;
+	}
+
+private:
+	am_Solver* _am_solver;
+	am_Variable*[string] _varnames;
+
+	auto performTerms(am_Constraint* cons, TermArgs[] ta)
+	{
+		foreach(e; ta)
+		{
+			if (!e.constant)
 			{
-				throw new Exception("Wrong variable name: " ~ e.var_name);
+				auto var = _varnames.get(e.var_name, null);
+				if (var is null)
+				{
+					throw new Exception("Wrong variable name: " ~ e.var_name);
+				}
+				cons.addterm(var, e.factor);
 			}
-			cons.addterm(var, e.factor);
-		}
-		else
-		{
-			cons.addconstant(e.factor);
+			else
+			{
+				cons.addconstant(e.factor);
+			}
 		}
 	}
-}
-
-auto addConstraint(am_Solver* solver, string expression)
-{
-	auto ir = process(expression);
-	auto cons = newConstraint(solver, AM_REQUIRED);
-
-	performTerms(cons, ir.left);
-	switch(ir.relation)
-	{
-		case "==" : cons.setrelation(AM_EQUAL);      break;
-		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
-		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
-		default: throw new Exception("Unsupported relation: " ~ ir.relation);
-	}
-	performTerms(cons, ir.right);
-
-	import std.exception : enforce;
-	auto ret = cons.add();
-	enforce(ret == AM_OK);
 }
 
 int main()
 {
-	auto solver = newSolver(&allocf, null);
-	assert(solver !is null);
-	auto xl = newVariable(solver);
-	debug xl.sym.label = "xl";
-	varnames["xl"] = xl;
-	auto xm = newVariable(solver);
-	debug xm.sym.label = "xm";
-	varnames["xm"] = xm;
-	auto xr = newVariable(solver);
-	debug xr.sym.label = "xr";
-	varnames["xr"] = xr;
-
-	addConstraint(solver, "xm*2 == xl+xr");
-	addConstraint(solver, "xl + 10 <= xr");
-	addConstraint(solver, "xr <= 100");
-	addConstraint(solver, "xl >= 0");
-	addConstraint(solver, "xm >= 12");
-
-	am_addedit(xm, AM_MEDIUM);
-	assert(am_hasedit(xm));
-
-	foreach(i; 0..12)
 	{
-		printf("suggest to %f: ", i*10.0);
-		am_suggest(xm, i*10.0);
-		am_updatevars(solver);
-		// am_dumpsolver(solver);
-		printf("\txl: %f,\txm: %f,\txr: %f\n",
-				am_value(xl),
-				am_value(xm),
-				am_value(xr));
+		auto solver = Solver(newSolver(&allocf, null));
+
+		auto xl = solver.addVariable("xl");
+		auto xm = solver.addVariable("xm");
+		auto xr = solver.addVariable("xr");
+
+		solver.addConstraint("xm*2 == xl+xr");
+		solver.addConstraint("xl + 10 <= xr");
+		solver.addConstraint("xr <= 100");
+		solver.addConstraint("xl >= 0");
+		solver.addConstraint("xm >= 12");
+
+		am_addedit(xm, AM_MEDIUM);
+		assert(am_hasedit(xm));
+
+		foreach(i; 0..12)
+		{
+			printf("suggest to %f: ", i*10.0);
+			am_suggest(xm, i*10.0);
+			solver.update;
+			// am_dumpsolver(solver);
+			printf("\txl: %f,\txm: %f,\txr: %f\n",
+					am_value(xl),
+					am_value(xm),
+					am_value(xr));
+		}
 	}
 
-	deleteSolver(solver);
 	printf("allmem = %ld\n", allmem);
 	printf("maxmem = %ld\n", maxmem);
 	assert(allmem == 0);
