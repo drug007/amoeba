@@ -141,18 +141,18 @@ struct TermArgs
 	}
 }
 
-struct IntermediaryResult
+struct IntermediateResult
 {
 	TermArgs[] left, right;
 	string relation;
 }
 
-IntermediaryResult process(string expression)
+IntermediateResult process(string expression)
 {
 	bool right_side, single, divide;
 	double number;
 	TermArgs term_args;
-	IntermediaryResult iresult;
+	IntermediateResult iresult;
 
 	auto parseTree = Arithmetic(expression);
 	void value(ParseTree p)
@@ -253,6 +253,40 @@ unittest
 	assert(ir.relation == "==");
 }
 
+struct Var
+{
+	@disable
+	this();
+
+	auto suggest(am_Float value)
+	{
+		am_suggest(_am_var, value);
+	}
+
+	auto value()
+	{
+		return am_value(_am_var);
+	}
+
+	auto addEdit(am_Float strength)
+	{
+		am_addedit(_am_var, strength);
+	}
+
+	bool hasEdit()
+	{
+		return am_hasedit(_am_var) != 0;
+	}
+
+private:
+	am_Variable* _am_var;
+
+	this(am_Variable* v)
+	{
+		_am_var = v;
+	}
+}
+
 struct Solver
 {
 	this(am_Solver* solver)
@@ -271,7 +305,7 @@ struct Solver
 	{
 		auto var = newVariable(_am_solver);
 		_varnames[name] = var;
-		return var;
+		return Var(var);
 	}
 
 	auto addConstraint(string expression)
@@ -324,10 +358,15 @@ private:
 	}
 }
 
+auto cassowarySolver()
+{
+	return Solver(newSolver(&allocf, null));
+}
+
 int main()
 {
 	{
-		auto solver = Solver(newSolver(&allocf, null));
+		auto solver = cassowarySolver;
 
 		auto xl = solver.addVariable("xl");
 		auto xm = solver.addVariable("xm");
@@ -339,19 +378,19 @@ int main()
 		solver.addConstraint("xl >= 0");
 		solver.addConstraint("xm >= 12");
 
-		am_addedit(xm, AM_MEDIUM);
-		assert(am_hasedit(xm));
+		xm.addEdit(AM_MEDIUM);
+		assert(xm.hasEdit);
 
 		foreach(i; 0..12)
 		{
 			printf("suggest to %f: ", i*10.0);
-			am_suggest(xm, i*10.0);
+			xm.suggest(i*10.0);
 			solver.update;
 			// am_dumpsolver(solver);
 			printf("\txl: %f,\txm: %f,\txr: %f\n",
-					am_value(xl),
-					am_value(xm),
-					am_value(xr));
+					xl.value,
+					xm.value,
+					xr.value);
 		}
 	}
 
