@@ -255,8 +255,6 @@ unittest
 
 am_Variable*[string] varnames;
 
-import std.stdio;
-
 auto performTerms(am_Constraint* cons, TermArgs[] ta)
 {
 	foreach(e; ta)
@@ -269,12 +267,10 @@ auto performTerms(am_Constraint* cons, TermArgs[] ta)
 				throw new Exception("Wrong variable name: " ~ e.var_name);
 			}
 			cons.addterm(var, e.factor);
-			writeln("cons.addterm(", e.var_name, ", ", e.factor, ");");
 		}
 		else
 		{
 			cons.addconstant(e.factor);
-			writeln("cons.addconstant(", e.factor, ");");
 		}
 	}
 }
@@ -287,16 +283,15 @@ auto addConstraint(am_Solver* solver, string expression)
 	performTerms(cons, ir.left);
 	switch(ir.relation)
 	{
-		case "==" : cons.setrelation(AM_EQUAL);      writeln("cons.setrelation(AM_EQUAL);"); break;
-		case ">=" : cons.setrelation(AM_GREATEQUAL); writeln("cons.setrelation(AM_GREATEQUAL);"); break;
-		case "<=" : cons.setrelation(AM_LESSEQUAL);  writeln("cons.setrelation(AM_LESSEQUAL);"); break;
+		case "==" : cons.setrelation(AM_EQUAL);      break;
+		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
+		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
 		default: throw new Exception("Unsupported relation: " ~ ir.relation);
 	}
 	performTerms(cons, ir.right);
 
 	import std.exception : enforce;
 	auto ret = cons.add();
-	writeln("auto ret = cons.add();");
 	enforce(ret == AM_OK);
 }
 
@@ -314,49 +309,10 @@ int main()
 	debug xr.sym.label = "xr";
 	varnames["xr"] = xr;
 
-	// cons.addterm(2.0, xm);
-	// cons.setrelation(AM_EQUAL);
-	// cons.addterm(xl);
-	// cons.addterm(xr);
-	// auto ret = cons.add();
-	// assert(ret == AM_OK);
 	addConstraint(solver, "xm*2 == xl+xr");
-
-	// /* c2: xl + 10 <= xr */
-	// auto c2 = newConstraint(solver, AM_REQUIRED);
-	// c2.addterm(xl, 1.0);
-	// c2.addconstant(10.0);
-	// c2.setrelation(AM_LESSEQUAL);
-	// c2.addterm(xr, 1.0);
-	// ret = c2.add();
-	// assert(ret == AM_OK);
 	addConstraint(solver, "xl + 10 <= xr");
-
-	// /* c3: xr <= 100 */
-	// auto c3 = newConstraint(solver, AM_REQUIRED);
-	// c3.addterm(xr, 1.0);
-	// c3.setrelation(AM_LESSEQUAL);
-	// c3.addconstant(100.0);
-	// ret = c3.add();
-	// assert(ret == AM_OK);
 	addConstraint(solver, "xr <= 100");
-
-	// /* c4: xl >= 0 */
-	// auto c4 = newConstraint(solver, AM_REQUIRED);
-	// c4.addterm(xl, 1.0);
-	// c4.setrelation(AM_GREATEQUAL);
-	// c4.addconstant(0.0);
-	// ret = c4.add();
-	// assert(ret == AM_OK);
 	addConstraint(solver, "xl >= 0");
-
-	// /* c5: xm >= 12 */
-	// auto c5 = newConstraint(solver, AM_REQUIRED);
-	// c5.addterm(xm, 1.0);
-	// c5.setrelation(AM_GREATEQUAL);
-	// c5.addconstant(12.0);
-	// ret = c5.add();
-	// assert(ret == AM_OK);
 	addConstraint(solver, "xm >= 12");
 
 	am_addedit(xm, AM_MEDIUM);
