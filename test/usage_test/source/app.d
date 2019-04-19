@@ -255,7 +255,9 @@ unittest
 
 am_Variable*[string] varnames;
 
-auto performTerm(am_Constraint* cons, TermArgs[] ta)
+import std.stdio;
+
+auto performTerms(am_Constraint* cons, TermArgs[] ta)
 {
 	foreach(e; ta)
 	{
@@ -266,11 +268,13 @@ auto performTerm(am_Constraint* cons, TermArgs[] ta)
 			{
 				throw new Exception("Wrong variable name: " ~ e.var_name);
 			}
-			cons.addterm(e.factor, var);
+			cons.addterm(var, e.factor);
+			writeln("cons.addterm(", e.var_name, ", ", e.factor, ");");
 		}
 		else
 		{
 			cons.addconstant(e.factor);
+			writeln("cons.addconstant(", e.factor, ");");
 		}
 	}
 }
@@ -280,18 +284,19 @@ auto addConstraint(am_Solver* solver, string expression)
 	auto ir = process(expression);
 	auto cons = newConstraint(solver, AM_REQUIRED);
 
-	performTerm(cons, ir.left);
+	performTerms(cons, ir.left);
 	switch(ir.relation)
 	{
-		case "==" : cons.setrelation(AM_EQUAL);      break;
-		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
-		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
+		case "==" : cons.setrelation(AM_EQUAL);      writeln("cons.setrelation(AM_EQUAL);"); break;
+		case ">=" : cons.setrelation(AM_GREATEQUAL); writeln("cons.setrelation(AM_GREATEQUAL);"); break;
+		case "<=" : cons.setrelation(AM_LESSEQUAL);  writeln("cons.setrelation(AM_LESSEQUAL);"); break;
 		default: throw new Exception("Unsupported relation: " ~ ir.relation);
 	}
-	performTerm(cons, ir.right);
+	performTerms(cons, ir.right);
 
 	import std.exception : enforce;
 	auto ret = cons.add();
+	writeln("auto ret = cons.add();");
 	enforce(ret == AM_OK);
 }
 
@@ -309,53 +314,13 @@ int main()
 	debug xr.sym.label = "xr";
 	varnames["xr"] = xr;
 
-	// {
-	// 	auto ir = process("xm*2 == xl+xr");
-
-	// 	auto cons = newConstraint(solver, AM_REQUIRED);
-
-	// 	performTerm(cons, ir.left);
-
-	// 	switch(ir.relation)
-	// 	{
-	// 		case "==" : cons.setrelation(AM_EQUAL);      break;
-	// 		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
-	// 		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
-	// 		default: throw new Exception("Unsupported relation: " ~ ir.relation);
-	// 	}
-
-	// 	performTerm(cons, ir.right);
-
-	// 	// cons.addterm(2.0, xm);
-	// 	// cons.setrelation(AM_EQUAL);
-	// 	// cons.addterm(xl);
-	// 	// cons.addterm(xr);
-	// 	// auto ret = cons.add();
-	// 	// assert(ret == AM_OK);
-
-	// 	auto ret = cons.add();
-	// 	assert(ret == AM_OK);
-	// }
-
-	addConstraint(solver, "xm*2 == xl+xr");
-
 	// cons.addterm(2.0, xm);
 	// cons.setrelation(AM_EQUAL);
 	// cons.addterm(xl);
 	// cons.addterm(xr);
 	// auto ret = cons.add();
 	// assert(ret == AM_OK);
-
-	return 0;
-
-	// /* c1: 2*xm == xl + xr */
-	// auto c1 = newConstraint(solver, AM_REQUIRED);
-	// c1.addterm(2.0, xm);
-	// c1.setrelation(AM_EQUAL);
-	// c1.addterm(xl);
-	// c1.addterm(xr);
-	// auto ret = c1.add();
-	// assert(ret == AM_OK);
+	addConstraint(solver, "xm*2 == xl+xr");
 
 	// /* c2: xl + 10 <= xr */
 	// auto c2 = newConstraint(solver, AM_REQUIRED);
@@ -365,6 +330,7 @@ int main()
 	// c2.addterm(xr, 1.0);
 	// ret = c2.add();
 	// assert(ret == AM_OK);
+	addConstraint(solver, "xl + 10 <= xr");
 
 	// /* c3: xr <= 100 */
 	// auto c3 = newConstraint(solver, AM_REQUIRED);
@@ -373,6 +339,7 @@ int main()
 	// c3.addconstant(100.0);
 	// ret = c3.add();
 	// assert(ret == AM_OK);
+	addConstraint(solver, "xr <= 100");
 
 	// /* c4: xl >= 0 */
 	// auto c4 = newConstraint(solver, AM_REQUIRED);
@@ -381,6 +348,7 @@ int main()
 	// c4.addconstant(0.0);
 	// ret = c4.add();
 	// assert(ret == AM_OK);
+	addConstraint(solver, "xl >= 0");
 
 	// /* c5: xm >= 12 */
 	// auto c5 = newConstraint(solver, AM_REQUIRED);
@@ -389,27 +357,28 @@ int main()
 	// c5.addconstant(12.0);
 	// ret = c5.add();
 	// assert(ret == AM_OK);
+	addConstraint(solver, "xm >= 12");
 
-	// am_addedit(xm, AM_MEDIUM);
-	// assert(am_hasedit(xm));
+	am_addedit(xm, AM_MEDIUM);
+	assert(am_hasedit(xm));
 
-	// foreach(i; 0..12)
-	// {
-	// 	printf("suggest to %f: ", i*10.0);
-	// 	am_suggest(xm, i*10.0);
-	// 	am_updatevars(solver);
-	// 	// am_dumpsolver(solver);
-	// 	printf("\txl: %f,\txm: %f,\txr: %f\n",
-	// 			am_value(xl),
-	// 			am_value(xm),
-	// 			am_value(xr));
-	// }
+	foreach(i; 0..12)
+	{
+		printf("suggest to %f: ", i*10.0);
+		am_suggest(xm, i*10.0);
+		am_updatevars(solver);
+		// am_dumpsolver(solver);
+		printf("\txl: %f,\txm: %f,\txr: %f\n",
+				am_value(xl),
+				am_value(xm),
+				am_value(xr));
+	}
 
-	// deleteSolver(solver);
-	// printf("allmem = %ld\n", allmem);
-	// printf("maxmem = %ld\n", maxmem);
-	// assert(allmem == 0);
-	// maxmem = 0;
+	deleteSolver(solver);
+	printf("allmem = %ld\n", allmem);
+	printf("maxmem = %ld\n", maxmem);
+	assert(allmem == 0);
+	maxmem = 0;
 
-	// return 0;
+	return 0;
 }
