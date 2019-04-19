@@ -253,34 +253,99 @@ unittest
 	assert(ir.relation == "==");
 }
 
+am_Variable*[string] varnames;
+
+auto performTerm(am_Constraint* cons, TermArgs[] ta)
+{
+	foreach(e; ta)
+	{
+		if (!e.constant)
+		{
+			auto var = varnames.get(e.var_name, null);
+			if (var is null)
+			{
+				throw new Exception("Wrong variable name: " ~ e.var_name);
+			}
+			cons.addterm(e.factor, var);
+		}
+		else
+		{
+			cons.addconstant(e.factor);
+		}
+	}
+}
+
+auto addConstraint(am_Solver* solver, string expression)
+{
+	auto ir = process(expression);
+	auto cons = newConstraint(solver, AM_REQUIRED);
+
+	performTerm(cons, ir.left);
+	switch(ir.relation)
+	{
+		case "==" : cons.setrelation(AM_EQUAL);      break;
+		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
+		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
+		default: throw new Exception("Unsupported relation: " ~ ir.relation);
+	}
+	performTerm(cons, ir.right);
+
+	import std.exception : enforce;
+	auto ret = cons.add();
+	enforce(ret == AM_OK);
+}
+
 int main()
 {
 	auto solver = newSolver(&allocf, null);
 	assert(solver !is null);
 	auto xl = newVariable(solver);
 	debug xl.sym.label = "xl";
+	varnames["xl"] = xl;
 	auto xm = newVariable(solver);
 	debug xm.sym.label = "xm";
+	varnames["xm"] = xm;
 	auto xr = newVariable(solver);
 	debug xr.sym.label = "xr";
+	varnames["xr"] = xr;
 
-	{
-		auto ir = process("xm*2 == xl+xr");
+	// {
+	// 	auto ir = process("xm*2 == xl+xr");
 
-		auto cons = newConstraint(solver, AM_REQUIRED);
-		foreach(e; ir.left)
-		{
+	// 	auto cons = newConstraint(solver, AM_REQUIRED);
 
-		}
+	// 	performTerm(cons, ir.left);
 
-		// cons.addterm(2.0, xm);
-		// cons.setrelation(AM_EQUAL);
-		// cons.addterm(xl);
-		// cons.addterm(xr);
-		// auto ret = cons.add();
-		// assert(ret == AM_OK);
-	}
-	import std.stdio;
+	// 	switch(ir.relation)
+	// 	{
+	// 		case "==" : cons.setrelation(AM_EQUAL);      break;
+	// 		case ">=" : cons.setrelation(AM_GREATEQUAL); break;
+	// 		case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
+	// 		default: throw new Exception("Unsupported relation: " ~ ir.relation);
+	// 	}
+
+	// 	performTerm(cons, ir.right);
+
+	// 	// cons.addterm(2.0, xm);
+	// 	// cons.setrelation(AM_EQUAL);
+	// 	// cons.addterm(xl);
+	// 	// cons.addterm(xr);
+	// 	// auto ret = cons.add();
+	// 	// assert(ret == AM_OK);
+
+	// 	auto ret = cons.add();
+	// 	assert(ret == AM_OK);
+	// }
+
+	addConstraint(solver, "xm*2 == xl+xr");
+
+	// cons.addterm(2.0, xm);
+	// cons.setrelation(AM_EQUAL);
+	// cons.addterm(xl);
+	// cons.addterm(xr);
+	// auto ret = cons.add();
+	// assert(ret == AM_OK);
+
 	return 0;
 
 	// /* c1: 2*xm == xl + xr */
