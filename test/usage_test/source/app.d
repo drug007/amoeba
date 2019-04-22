@@ -12,7 +12,7 @@ static size_t maxmem;
 static void *END;
 
 extern(C)
-void* allocf(void *ud, void *ptr, size_t ns, size_t os) @nogc
+void* allocf(void *ud, void *ptr, size_t ns, size_t os) @nogc nothrow
 {
 	void *newptr = null;
 	allmem += ns;
@@ -21,9 +21,8 @@ void* allocf(void *ud, void *ptr, size_t ns, size_t os) @nogc
 	if (ns)
 	{
 		newptr = realloc(ptr, ns);
-		// import std.exception : enforce;
-		// enforce(newptr !is null);
-		assert(0);
+		if (newptr is null)
+			assert(0);
 	}
 	else 
 		free(ptr);
@@ -148,7 +147,7 @@ struct IntermediateResult
 	string relation;
 }
 
-IntermediateResult process(string expression) @nogc nothrow
+IntermediateResult process(string expression)
 {
 	bool right_side, single, divide;
 	double number;
@@ -291,8 +290,7 @@ private:
 
 struct Solver
 {
-@nogc:
-	this(am_Solver* solver)
+	this(am_Solver* solver) @nogc
 	{
 		// import std.exception : enforce;
 		// enforce(solver);
@@ -301,7 +299,7 @@ struct Solver
 		_am_solver = solver;
 	}
 
-	~this()
+	~this() @nogc
 	{
 		deleteSolver(_am_solver);
 	}
@@ -368,7 +366,7 @@ auto cassowarySolver() @nogc
 	return Solver(newSolver(&allocf, null));
 }
 
-int main() @nogc
+int main()
 {
 	{
 		auto solver = cassowarySolver;
