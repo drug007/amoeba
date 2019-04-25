@@ -257,7 +257,7 @@ struct Var
 private:
 	am_Variable* _am_var;
 
-	this(am_Variable* v)
+	this(am_Variable* v) @nogc
 	{
 		_am_var = v;
 	}
@@ -279,7 +279,7 @@ struct Solver
 		deleteSolver(_am_solver);
 	}
 
-	auto addVariable(string name)
+	auto addVariable(string name) @nogc
 	{
 		auto var = am_new_variable(_am_solver);
 		debug _varnames[name] = var;
@@ -306,7 +306,7 @@ struct Solver
 		enforce(ret == AM_OK);
 	}
 
-	auto update()
+	auto update() @nogc
 	{
 		_am_solver.am_updatevars;
 	}
