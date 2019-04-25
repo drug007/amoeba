@@ -838,7 +838,7 @@ void *am_default_allocf(void *ud, void *ptr, size_t nsize, size_t osize) {
     return newptr;
 }
 
-am_Solver *newSolver(am_Allocf allocf, void *ud) {
+am_Solver *am_newsolver(am_Allocf allocf, void *ud) {
     am_Solver *solver;
     if (allocf is null) allocf = &am_default_allocf;
     if ((solver = cast(am_Solver*)allocf(ud, null, am_Solver.sizeof, 0)) is null)

@@ -7,31 +7,6 @@ import pegged.grammar;
 
 import cassowary.amoeba;
 
-static size_t allmem;
-static size_t maxmem;
-static void *END;
-
-extern(C)
-void* allocf(void *ud, void *ptr, size_t ns, size_t os) @nogc nothrow
-{
-	void *newptr = null;
-	allmem += ns;
-	allmem -= os;
-	if (maxmem < allmem) maxmem = allmem;
-	if (ns)
-	{
-		newptr = realloc(ptr, ns);
-		if (newptr is null)
-			assert(0);
-	}
-	else 
-		free(ptr);
-version(DEBUG_MEMORY)
-	printf("new(%p):\t+%d, old(%p):\t-%d\n", newptr, cast(int)ns, ptr, cast(int)os);
-else
-	return newptr;
-}
-
 void am_dumpkey(am_Symbol sym)
 {
 	debug if (sym.label.length)
@@ -363,7 +338,7 @@ private:
 
 auto cassowarySolver() @nogc
 {
-	return Solver(newSolver(&allocf, null));
+	return Solver(am_newsolver(null, null));
 }
 
 int main()
@@ -396,11 +371,6 @@ int main()
 					xr.value);
 		}
 	}
-
-	printf("allmem = %ld\n", allmem);
-	printf("maxmem = %ld\n", maxmem);
-	assert(allmem == 0);
-	maxmem = 0;
 
 	return 0;
 }
