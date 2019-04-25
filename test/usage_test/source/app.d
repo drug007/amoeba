@@ -306,7 +306,7 @@ struct Solver
 
 	auto addVariable(string name)
 	{
-		auto var = newVariable(_am_solver);
+		auto var = am_new_variable(_am_solver);
 		debug _varnames[name] = var;
 		return Var(var);
 	}
@@ -314,20 +314,20 @@ struct Solver
 	auto addConstraint(string expression)
 	{
 		auto ir = process(expression);
-		auto cons = newConstraint(_am_solver, AM_REQUIRED);
+		auto cons = am_new_constraint(_am_solver, AM_REQUIRED);
 
 		performTerms(cons, ir.left);
 		switch(ir.relation)
 		{
-			case "==" : cons.setrelation(AM_EQUAL);      break;
-			case ">=" : cons.setrelation(AM_GREATEQUAL); break;
-			case "<=" : cons.setrelation(AM_LESSEQUAL);  break;
+			case "==" : cons.am_setrelation(AM_EQUAL);      break;
+			case ">=" : cons.am_setrelation(AM_GREATEQUAL); break;
+			case "<=" : cons.am_setrelation(AM_LESSEQUAL);  break;
 			default: throw new Exception("Unsupported relation: " ~ ir.relation);
 		}
 		performTerms(cons, ir.right);
 
 		import std.exception : enforce;
-		auto ret = cons.add();
+		auto ret = cons.am_add();
 		enforce(ret == AM_OK);
 	}
 
@@ -351,11 +351,11 @@ private:
 				{
 					throw new Exception("Wrong variable name: " ~ e.var_name);
 				}
-				cons.addterm(var, e.factor);
+				cons.am_addterm(var, e.factor);
 			}
 			else
 			{
-				cons.addconstant(e.factor);
+				cons.am_addconstant(e.factor);
 			}
 		}
 	}
