@@ -276,12 +276,12 @@ struct Solver
 
 	~this() @nogc
 	{
-		deleteSolver(_am_solver);
+		am_delsolver(_am_solver);
 	}
 
 	auto addVariable(string name) @nogc
 	{
-		auto var = am_new_variable(_am_solver);
+		auto var = am_newvariable(_am_solver);
 		debug _varnames[name] = var;
 		return Var(var);
 	}
@@ -289,7 +289,7 @@ struct Solver
 	auto addConstraint(string expression)
 	{
 		auto ir = process(expression);
-		auto cons = am_new_constraint(_am_solver, AM_REQUIRED);
+		auto cons = am_newconstraint(_am_solver, AM_REQUIRED);
 
 		performTerms(cons, ir.left);
 		switch(ir.relation)
