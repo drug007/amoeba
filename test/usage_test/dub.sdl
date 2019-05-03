@@ -1,0 +1,7 @@
+name "usage_test"
+description "A minimal D application."
+authors "drug007"
+copyright "Copyright © 2019, drug007"
+license "MIT"
+dependency "amoeba" path="../.."
+dependency "pegged" version="~>0.4.4"
