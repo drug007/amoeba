@@ -253,6 +253,11 @@ struct Var
 		am_addedit(_am_var, strength);
 	}
 
+	auto delEdit()
+	{
+		am_deledit(_am_var);
+	}
+
 	bool hasEdit()
 	{
 		return am_hasedit(_am_var) != 0;
