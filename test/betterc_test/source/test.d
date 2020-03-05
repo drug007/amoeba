@@ -21,7 +21,7 @@ void *debug_allocf(void *ud, void *ptr, size_t ns, size_t os) nothrow @nogc
 	if (ns == 0) free(ptr);
 	else {
 		newptr = realloc(ptr, ns);
-		if (newptr == null) longjmp(jbuf, 1);
+		if (newptr is null) longjmp(jbuf, 1);
 	}
 version(DEBUG_MEMORY)
 	printf("new(%p):\t+%d, old(%p):\t-%d\n", newptr, cast(int)ns, ptr, cast(int)os);
@@ -116,10 +116,10 @@ void test_all() {
 	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&null_allocf, null);
-	assert(solver == null);
+	assert(solver is null);
 
 	solver = am_newsolver(null, null);
-	assert(solver != null);
+	assert(solver !is null);
 	deleteSolver(solver);
 
 	solver = am_newsolver(&debug_allocf, null);
@@ -313,7 +313,7 @@ void test_binarytree() {
 
 	printf("\n\n==========\ntest binarytree\n");
 	arrX = cast(am_Variable**)malloc(2048 * (am_Variable*).sizeof);
-	if (arrX == null) return;
+	if (arrX is null) return;
 	arrY = arrX + 1024;
 
 	/* Create set of rules to distribute vertexes of a binary tree like this one:
