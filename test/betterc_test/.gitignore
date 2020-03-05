@@ -13,3 +13,4 @@ test_betterc-test-*
 *.obj
 *.lst
 /test_betterc
+*.selections.json

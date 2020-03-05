@@ -13,3 +13,4 @@ test2-test-*
 *.obj
 *.lst
 /test2
+*.selections.json
