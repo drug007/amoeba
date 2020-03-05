@@ -11,7 +11,8 @@ static size_t maxmem = 0;
 static void *END = null;
 
 extern(C)
-void *debug_allocf(void *ud, void *ptr, size_t ns, size_t os) {
+void *debug_allocf(void *ud, void *ptr, size_t ns, size_t os) nothrow @nogc
+{
 	void *newptr = null;
 	cast(void)ud;
 	allmem += ns;
@@ -29,7 +30,7 @@ else
 }
 
 extern(C)
-void *null_allocf(void *ud, void *ptr, size_t ns, size_t os)
+void *null_allocf(void *ud, void *ptr, size_t ns, size_t os) nothrow @nogc
 { cast(void)ud, cast(void)ptr, cast(void)ns, cast(void)os; return null; }
 
 void am_dumpkey(am_Symbol sym) {
@@ -74,6 +75,7 @@ void am_dumpsolver(am_Solver *solver) {
 	printf("-------------------------------\n");
 }
 
+extern(C)
 am_Constraint* new_constraint(am_Solver* in_solver, double in_strength,
 		am_Variable* in_term1, double in_factor1, int in_relation,
 		double in_constant, ...)
@@ -82,7 +84,7 @@ am_Constraint* new_constraint(am_Solver* in_solver, double in_strength,
 	va_list argp;
 	am_Constraint* c;
 	assert(in_solver && in_term1);
-	c = am_newconstraint(in_solver, cast(am_Float)in_strength);
+	c = am_new_constraint(in_solver, cast(am_Float)in_strength);
 	if(!c) return null;
 	am_addterm(c, in_term1, cast(am_Float)in_factor1);
 	am_setrelation(c, in_relation);
@@ -118,12 +120,12 @@ void test_all() {
 
 	solver = am_newsolver(null, null);
 	assert(solver != null);
-	am_delsolver(solver);
+	deleteSolver(solver);
 
 	solver = am_newsolver(&debug_allocf, null);
-	xl = am_newvariable(solver);
-	xm = am_newvariable(solver);
-	xr = am_newvariable(solver);
+	xl = am_new_variable(solver);
+	xm = am_new_variable(solver);
+	xr = am_new_variable(solver);
 
 	assert(am_variableid(null) == -1);
 	assert(am_variableid(xl) == 1);
@@ -135,12 +137,12 @@ void test_all() {
 	assert(!am_hasedit(xr));
 	assert(!am_hasconstraint(null));
 
-	xd = am_newvariable(solver);
+	xd = am_new_variable(solver);
 	am_delvariable(xd);
 
 	assert(am_setrelation(null, AM_GREATEQUAL) == AM_FAILED);
 
-	c1 = am_newconstraint(solver, AM_REQUIRED);
+	c1 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c1, xl, 1.0);
 	am_setrelation(c1, AM_GREATEQUAL);
 	ret = am_add(c1);
@@ -154,7 +156,7 @@ void test_all() {
 	assert(am_hasconstraint(c1));
 	assert(!am_hasedit(xl));
 
-	c2 = am_newconstraint(solver, AM_REQUIRED);
+	c2 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c2, xl, 1.0);
 	am_setrelation(c2, AM_EQUAL);
 	ret = am_add(c2);
@@ -167,7 +169,7 @@ void test_all() {
 	am_dumpsolver(solver);
 
 	/* c1: 2*xm == xl + xr */
-	c1 = am_newconstraint(solver, AM_REQUIRED);
+	c1 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c1, xm, 2.0);
 	am_setrelation(c1, AM_EQUAL);
 	am_addterm(c1, xl, 1.0);
@@ -177,7 +179,7 @@ void test_all() {
 	am_dumpsolver(solver);
 
 	/* c2: xl + 10 <= xr */
-	c2 = am_newconstraint(solver, AM_REQUIRED);
+	c2 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c2, xl, 1.0);
 	am_addconstant(c2, 10.0);
 	am_setrelation(c2, AM_LESSEQUAL);
@@ -187,7 +189,7 @@ void test_all() {
 	am_dumpsolver(solver);
 
 	/* c3: xr <= 100 */
-	c3 = am_newconstraint(solver, AM_REQUIRED);
+	c3 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c3, xr, 1.0);
 	am_setrelation(c3, AM_LESSEQUAL);
 	am_addconstant(c3, 100.0);
@@ -196,7 +198,7 @@ void test_all() {
 	am_dumpsolver(solver);
 
 	/* c4: xl >= 0 */
-	c4 = am_newconstraint(solver, AM_REQUIRED);
+	c4 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c4, xl, 1.0);
 	am_setrelation(c4, AM_GREATEQUAL);
 	am_addconstant(c4, 0.0);
@@ -210,7 +212,7 @@ void test_all() {
 	am_dumpsolver(solver);
 	am_remove(c5);
 
-	c5 = am_newconstraint(solver, AM_REQUIRED);
+	c5 = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c5, xl, 1.0);
 	am_setrelation(c5, AM_EQUAL);
 	am_addconstant(c5, 0.0);
@@ -292,7 +294,7 @@ void test_all() {
 			am_value(xm),
 			am_value(xr));
 
-	am_delsolver(solver);
+	deleteSolver(solver);
 	printf("allmem = %d\n", cast(int)allmem);
 	printf("maxmem = %d\n", cast(int)maxmem);
 	assert(allmem == 0);
@@ -326,8 +328,8 @@ void test_binarytree() {
 	pSolver = am_newsolver(&debug_allocf, null);
 
 	/* Xroot=500, Yroot=10 */
-	arrX[0] = am_newvariable(pSolver);
-	arrY[0] = am_newvariable(pSolver);
+	arrX[0] = am_new_variable(pSolver);
+	arrY[0] = am_new_variable(pSolver);
 	am_addedit(arrX[0], AM_STRONG);
 	am_addedit(arrY[0], AM_STRONG);
 	am_suggest(arrX[0], 500.0f + X_OFFSET);
@@ -340,11 +342,11 @@ void test_binarytree() {
 		nCurrentRowPointsCount *= 2;
 
 		for (nPoint = 0; nPoint < nCurrentRowPointsCount; nPoint++) {
-			arrX[nCurrentRowFirstPointIndex + nPoint] = am_newvariable(pSolver);
-			arrY[nCurrentRowFirstPointIndex + nPoint] = am_newvariable(pSolver);
+			arrX[nCurrentRowFirstPointIndex + nPoint] = am_new_variable(pSolver);
+			arrY[nCurrentRowFirstPointIndex + nPoint] = am_new_variable(pSolver);
 
 			/* Ycur = Yprev_row + 15 */
-			pC = am_newconstraint(pSolver, AM_REQUIRED);
+			pC = am_new_constraint(pSolver, AM_REQUIRED);
 			am_addterm(pC, arrY[nCurrentRowFirstPointIndex + nPoint], 1.0);
 			am_setrelation(pC, AM_EQUAL);
 			am_addterm(pC, arrY[nCurrentRowFirstPointIndex - 1], 1.0);
@@ -354,7 +356,7 @@ void test_binarytree() {
 
 			if (nPoint > 0) {
 				/* Xcur >= XPrev + 5 */
-				pC = am_newconstraint(pSolver, AM_REQUIRED);
+				pC = am_new_constraint(pSolver, AM_REQUIRED);
 				am_addterm(pC, arrX[nCurrentRowFirstPointIndex + nPoint], 1.0);
 				am_setrelation(pC, AM_GREATEQUAL);
 				am_addterm(pC, arrX[nCurrentRowFirstPointIndex + nPoint - 1], 1.0);
@@ -363,7 +365,7 @@ void test_binarytree() {
 				assert(nResult == AM_OK);
 			} else {
 				/* When these lines added it crashes at the line 109 */
-				pC = am_newconstraint(pSolver, AM_REQUIRED);
+				pC = am_new_constraint(pSolver, AM_REQUIRED);
 				am_addterm(pC, arrX[nCurrentRowFirstPointIndex + nPoint], 1.0);
 				am_setrelation(pC, AM_GREATEQUAL);
 				am_addconstant(pC, 0.0);
@@ -373,7 +375,7 @@ void test_binarytree() {
 
 			if ((nPoint % 2) == 1) {
 				/* Xparent = 0.5 * Xcur + 0.5 * Xprev */
-				pC = am_newconstraint(pSolver, AM_REQUIRED);
+				pC = am_new_constraint(pSolver, AM_REQUIRED);
 				am_addterm(pC, arrX[nPreviousRowFirstPointIndex + nParentPoint], 1.0);
 				am_setrelation(pC, AM_EQUAL);
 				am_addterm(pC, arrX[nCurrentRowFirstPointIndex + nPoint], 0.5);
@@ -395,7 +397,7 @@ void test_binarytree() {
 					am_value(arrX[i]), am_value(arrY[i]));
 	}*/
 
-	am_delsolver(pSolver);
+	deleteSolver(pSolver);
 	printf("allmem = %d\n", cast(int)allmem);
 	printf("maxmem = %d\n", cast(int)maxmem);
 	assert(allmem == 0);
@@ -414,11 +416,11 @@ void test_unbounded() {
 	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&debug_allocf, null);
-	x = am_newvariable(solver);
-	y = am_newvariable(solver);
+	x = am_new_variable(solver);
+	y = am_new_variable(solver);
 
 	/* 10.0 == 0.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addconstant(c, 10.0);
 	am_setrelation(c, AM_EQUAL);
 	ret = am_add(c);
@@ -427,7 +429,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* 0.0 == 0.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addconstant(c, 0.0);
 	am_setrelation(c, AM_EQUAL);
 	ret = am_add(c);
@@ -438,7 +440,7 @@ void test_unbounded() {
 	am_resetsolver(solver, 1);
 
 	/* x >= 10.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_GREATEQUAL);
 	am_addconstant(c, 10.0);
@@ -448,7 +450,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* x == 2*y */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_EQUAL);
 	am_addterm(c, y, 2.0);
@@ -458,7 +460,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* y == 3*x */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, y, 1.0);
 	am_setrelation(c, AM_EQUAL);
 	am_addterm(c, x, 3.0);
@@ -470,7 +472,7 @@ void test_unbounded() {
 	am_resetsolver(solver, 1);
 
 	/* x >= 10.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_GREATEQUAL);
 	am_addconstant(c, 10.0);
@@ -480,7 +482,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* x <= 0.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_LESSEQUAL);
 	ret = am_add(c);
@@ -493,7 +495,7 @@ void test_unbounded() {
 	am_resetsolver(solver, 1);
 
 	/* x == 10.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_EQUAL);
 	am_addconstant(c, 10.0);
@@ -503,7 +505,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* x == 20.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_EQUAL);
 	am_addconstant(c, 20.0);
@@ -513,7 +515,7 @@ void test_unbounded() {
 	am_dumpsolver(solver);
 
 	/* x == 10.0 */
-	c = am_newconstraint(solver, AM_REQUIRED);
+	c = am_new_constraint(solver, AM_REQUIRED);
 	am_addterm(c, x, 1.0);
 	am_setrelation(c, AM_EQUAL);
 	am_addconstant(c, 10.0);
@@ -522,7 +524,7 @@ void test_unbounded() {
 	assert(ret == AM_OK);
 	am_dumpsolver(solver);
 
-	am_delsolver(solver);
+	deleteSolver(solver);
 	printf("allmem = %d\n", cast(int)allmem);
 	printf("maxmem = %d\n", cast(int)maxmem);
 	assert(allmem == 0);
@@ -541,8 +543,8 @@ void test_strength() {
 
 	solver = am_newsolver(&debug_allocf, null);
 	am_autoupdate(solver, 1);
-	x = am_newvariable(solver);
-	y = am_newvariable(solver);
+	x = am_new_variable(solver);
+	y = am_new_variable(solver);
 
 	/* x <= y */
 	new_constraint(solver, AM_STRONG, x, 1.0, AM_LESSEQUAL, 0.0,
@@ -563,7 +565,7 @@ void test_strength() {
 	assert(am_value(x) == 50);
 	assert(am_value(y) == 50);
 
-	am_delsolver(solver);
+	deleteSolver(solver);
 	printf("allmem = %d\n", cast(int)allmem);
 	printf("maxmem = %d\n", cast(int)maxmem);
 	assert(allmem == 0);
@@ -599,18 +601,18 @@ void test_suggest() {
 	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&debug_allocf, null);
-	splitter_l = am_newvariable(solver);
-	splitter_w = am_newvariable(solver);
-	splitter_r = am_newvariable(solver);
-	left_child_l = am_newvariable(solver);
-	left_child_w = am_newvariable(solver);
-	left_child_r = am_newvariable(solver);
-	splitter_bar_l = am_newvariable(solver);
-	splitter_bar_w = am_newvariable(solver);
-	splitter_bar_r = am_newvariable(solver);
-	right_child_l = am_newvariable(solver);
-	right_child_w = am_newvariable(solver);
-	right_child_r = am_newvariable(solver);
+	splitter_l = am_new_variable(solver);
+	splitter_w = am_new_variable(solver);
+	splitter_r = am_new_variable(solver);
+	left_child_l = am_new_variable(solver);
+	left_child_w = am_new_variable(solver);
+	left_child_r = am_new_variable(solver);
+	splitter_bar_l = am_new_variable(solver);
+	splitter_bar_w = am_new_variable(solver);
+	splitter_bar_r = am_new_variable(solver);
+	right_child_l = am_new_variable(solver);
+	right_child_w = am_new_variable(solver);
+	right_child_r = am_new_variable(solver);
 
 	/* splitter_r = splitter_l + splitter_w */
 	/* left_child_r = left_child_l + left_child_w */
@@ -666,7 +668,7 @@ void test_suggest() {
 		printf("\n");
 	}
 
-	am_delsolver(solver);
+	deleteSolver(solver);
 	printf("allmem = %d\n", cast(int)allmem);
 	printf("maxmem = %d\n", cast(int)maxmem);
 	assert(allmem == 0);
@@ -676,10 +678,10 @@ void test_suggest() {
 void test_cycling() {
 	am_Solver * solver = am_newsolver(null, null);
 
-	am_Variable * va = am_newvariable(solver);
-	am_Variable * vb = am_newvariable(solver);
-	am_Variable * vc = am_newvariable(solver);
-	am_Variable * vd = am_newvariable(solver);
+	am_Variable * va = am_new_variable(solver);
+	am_Variable * vb = am_new_variable(solver);
+	am_Variable * vc = am_new_variable(solver);
+	am_Variable * vd = am_new_variable(solver);
 
 	am_addedit(va, AM_STRONG);
 	printf("after edit\n");
@@ -687,7 +689,7 @@ void test_cycling() {
 
 	/* vb == va */
 	{
-		am_Constraint * c = am_newconstraint(solver, AM_REQUIRED);
+		am_Constraint * c = am_new_constraint(solver, AM_REQUIRED);
 		int ret = 0;
 		ret |= am_addterm(c, vb, 1.0);
 		ret |= am_setrelation(c, AM_EQUAL);
@@ -699,7 +701,7 @@ void test_cycling() {
 
 	/* vb == vc */
 	{
-		am_Constraint * c = am_newconstraint(solver, AM_REQUIRED);
+		am_Constraint * c = am_new_constraint(solver, AM_REQUIRED);
 		int ret = 0;
 		ret |= am_addterm(c, vb, 1.0);
 		ret |= am_setrelation(c, AM_EQUAL);
@@ -711,7 +713,7 @@ void test_cycling() {
 
 	/* vc == vd */
 	{
-		am_Constraint * c = am_newconstraint(solver, AM_REQUIRED);
+		am_Constraint * c = am_new_constraint(solver, AM_REQUIRED);
 		int ret = 0;
 		ret |= am_addterm(c, vc, 1.0);
 		ret |= am_setrelation(c, AM_EQUAL);
@@ -723,7 +725,7 @@ void test_cycling() {
 
 	/* vd == va */
 	{
-		am_Constraint * c = am_newconstraint(solver, AM_REQUIRED);
+		am_Constraint * c = am_new_constraint(solver, AM_REQUIRED);
 		int ret = 0;
 		ret |= am_addterm(c, vd, 1.0);
 		ret |= am_setrelation(c, AM_EQUAL);
