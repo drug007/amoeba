@@ -1,11 +1,9 @@
-import core.sys.posix.setjmp : jmp_buf, longjmp, setjmp;
-import core.stdc.stdarg : va_arg, va_list, va_start, va_end, __va_list_tag;
+import core.stdc.stdarg;
 import core.stdc.stdlib : free, realloc, malloc;
 import core.stdc.stdio : printf, perror;
 
 import cassowary.amoeba;
 
-static jmp_buf jbuf;
 static size_t allmem = 0;
 static size_t maxmem = 0;
 static void *END = null;
@@ -19,10 +17,7 @@ void *debug_allocf(void *ud, void *ptr, size_t ns, size_t os) nothrow @nogc
 	allmem -= os;
 	if (maxmem < allmem) maxmem = allmem;
 	if (ns == 0) free(ptr);
-	else {
-		newptr = realloc(ptr, ns);
-		if (newptr is null) longjmp(jbuf, 1);
-	}
+	else newptr = realloc(ptr, ns);
 version(DEBUG_MEMORY)
 	printf("new(%p):\t+%d, old(%p):\t-%d\n", newptr, cast(int)ns, ptr, cast(int)os);
 else
@@ -109,11 +104,7 @@ void test_all() {
 	am_Variable *xr;
 	am_Variable *xd;
 	am_Constraint* c1, c2, c3, c4, c5, c6;
-	int ret = setjmp(jbuf);
 	printf("\n\n==========\ntest all\n");
-	printf("ret = %d\n", ret);
-	if (ret < 0) { perror("setjmp"); return; }
-	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&null_allocf, null);
 	assert(solver is null);
@@ -145,7 +136,7 @@ void test_all() {
 	c1 = am_newconstraint(solver, AM_REQUIRED);
 	am_addterm(c1, xl, 1.0);
 	am_setrelation(c1, AM_GREATEQUAL);
-	ret = am_add(c1);
+	auto ret = am_add(c1);
 	assert(ret == AM_OK);
 	am_dumpsolver(solver);
 
@@ -409,11 +400,7 @@ void test_unbounded() {
 	am_Solver *solver;
 	am_Variable* x, y;
 	am_Constraint *c;
-	int ret = setjmp(jbuf);
 	printf("\n\n==========\ntest unbound\n");
-	printf("ret = %d\n", ret);
-	if (ret < 0) { perror("setjmp"); return; }
-	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&debug_allocf, null);
 	x = am_newvariable(solver);
@@ -423,7 +410,7 @@ void test_unbounded() {
 	c = am_newconstraint(solver, AM_REQUIRED);
 	am_addconstant(c, 10.0);
 	am_setrelation(c, AM_EQUAL);
-	ret = am_add(c);
+	auto ret = am_add(c);
 	printf("ret = %d\n", ret);
 	assert(ret == AM_UNSATISFIED);
 	am_dumpsolver(solver);
@@ -535,11 +522,7 @@ void test_strength() {
 	am_Solver *solver;
 	am_Variable* x, y;
 	am_Constraint *c;
-	int ret = setjmp(jbuf);
 	printf("\n\n==========\ntest strength\n");
-	printf("ret = %d\n", ret);
-	if (ret < 0) { perror("setjmp"); return; }
-	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&debug_allocf, null);
 	am_autoupdate(solver, 1);
@@ -594,11 +577,7 @@ void test_suggest() {
 	am_Variable* left_child_l,   left_child_w,   left_child_r;
 	am_Variable* splitter_bar_l, splitter_bar_w, splitter_bar_r;
 	am_Variable* right_child_l,  right_child_w,  right_child_r;
-	int ret = setjmp(jbuf);
 	printf("\n\n==========\ntest suggest\n");
-	printf("ret = %d\n", ret);
-	if (ret < 0) { perror("setjmp"); return; }
-	else if (ret != 0) { printf("out of memory!\n"); return; }
 
 	solver = am_newsolver(&debug_allocf, null);
 	splitter_l = am_newvariable(solver);
