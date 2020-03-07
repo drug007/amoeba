@@ -2,6 +2,7 @@
 	"fileVersion": 1,
 	"versions": {
 		"amoeba": {"path":"../.."},
-		"mir-core": "1.0.3"
+		"mir-core": "1.0.3",
+		"pegged": "0.4.4"
 	}
 }

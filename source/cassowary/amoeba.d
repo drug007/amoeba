@@ -58,7 +58,7 @@ else
 }
 
 struct am_Symbol {
-	import std.bitmanip : bitfields;
+	import mir.bitmanip : bitfields;
 	mixin(bitfields!(
 		uint, "id",    30,
 		uint, "type",   2,));
